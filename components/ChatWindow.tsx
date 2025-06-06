@@ -14,34 +14,32 @@ interface ChatWindowProps {
   onBack: () => void;
 }
 
-const API_KEY = process.env.GEMINI_API_KEY;
-console.log('API Key available:', !!API_KEY);
-console.log('Environment variables:', process.env);
+// Assume process.env.API_KEY is available in the environment
+const API_KEY = process.env.API_KEY;
+let ai: GoogleGenAI | null = null;
+if (API_KEY) {
+  ai = new GoogleGenAI({ apiKey: API_KEY });
+} else {
+  console.warn("API_KEY environment variable not set. Gemini API will not function.");
+}
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [geminiChat, setGeminiChat] = useState<Chat | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatHistoryKey = `${LOCAL_STORAGE_CHAT_HISTORY_KEY_PREFIX}${character.id}`;
 
   const [isTTSEnabled, setIsTTSEnabled] = useState(false);
-  const { speak, stopSpeaking, isSpeaking, availableVoices, error: ttsError } = useTextToSpeech();
-  const { isListening, startListening, stopListening, browserSupportsSpeechRecognition } = useSpeechRecognition({
-    onResult: handleSpeechResult,
-    onError: (error) => {
-      console.error('Speech recognition error:', error);
-      setError('Speech recognition failed. Please try again.');
-    }
-  });
-
-  const ai = API_KEY ? new GoogleGenAI(API_KEY) : null;
-
+  const { speak, stopSpeaking, isSpeaking, availableVoices } = useTextToSpeech();
+  
   const handleSpeechResult = useCallback((transcript: string) => {
-    setInputText(transcript);
+    setInputText(prev => prev + transcript);
   }, []);
+
+  const { isListening, startListening, stopListening, browserSupportsSpeechRecognition } = useSpeechRecognition({ onResult: handleSpeechResult });
+
+  const chatHistoryKey = `${LOCAL_STORAGE_CHAT_HISTORY_KEY_PREFIX}${character.id}`;
 
   useEffect(() => {
     // Load chat history from localStorage
@@ -53,27 +51,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
     }
 
     // Initialize Gemini Chat session
-    console.log('Initializing chat with API key:', !!API_KEY);
-    if (!API_KEY || error) {
-      console.log('API Key missing or error:', { hasKey: !!API_KEY, error });
-      setError("API Key is not configured");
-      return;
+    if (ai) {
+      const chatInstance = ai.chats.create({
+        model: GEMINI_MODEL_NAME,
+        config: {
+          systemInstruction: character.personalityPrompt,
+        },
+        // history: savedHistory ? JSON.parse(savedHistory).map(msg => ({ // TODO: Map to Gemini history format
+        //   role: msg.sender === 'user' ? 'user' : 'model',
+        //   parts: [{text: msg.text}]
+        // })) : [] // This mapping might be complex; starting fresh chat session for now
+      });
+      setGeminiChat(chatInstance);
     }
-
-    try {
-      if (ai) {
-        const chatInstance = ai.chats.create({
-          model: GEMINI_MODEL_NAME,
-          config: { systemInstruction: character.personalityPrompt },
-        });
-        setGeminiChat(chatInstance);
-        setError(null);
-      }
-    } catch (err) {
-      console.error('Error initializing Gemini chat:', err);
-      setError("Failed to initialize chat. Please try again later.");
-    }
-  }, [character.personalityPrompt]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [character, chatHistoryKey]); // Re-init on character change
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -83,50 +75,55 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
     }
   }, [messages, chatHistoryKey]);
 
-  const handleSendMessage = async () => {
-    if (!inputText.trim() || !geminiChat || isLoading) return;
+  const handleSendMessage = useCallback(async () => {
+    if (!inputText.trim() || isLoading || !geminiChat) return;
 
     const userMessage: ChatMessage = {
       id: uuidv4(),
-      content: inputText.trim(),
+      text: inputText,
       sender: 'user',
-      timestamp: new Date().toISOString()
+      timestamp: Date.now(),
     };
-
-    const aiMessage: ChatMessage = {
-      id: uuidv4(),
-      content: '',
-      sender: 'ai',
-      isLoading: true,
-      timestamp: new Date().toISOString()
-    };
-
-    setMessages(prev => [...prev, userMessage, aiMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInputText('');
     setIsLoading(true);
 
+    const aiMessageId = uuidv4();
+    setMessages(prev => [...prev, { id: aiMessageId, text: '', sender: 'ai', timestamp: Date.now(), isLoading: true }]);
+
     try {
-      const result = await geminiChat.sendMessage(userMessage.content);
-      const response = await result.response;
-      const text = response.text();
-
-      setMessages(prev => prev.map(msg => 
-        msg.id === aiMessage.id 
-          ? { ...msg, content: text, isLoading: false }
-          : msg
-      ));
-
-      if (isTTSEnabled) {
-        speak(text, character.voiceSettings);
+      const stream = await geminiChat.sendMessageStream({ message: userMessage.text });
+      let fullText = "";
+      for await (const chunk of stream) {
+        const chunkText = chunk.text;
+        if (chunkText) {
+          fullText += chunkText;
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === aiMessageId ? { ...msg, text: fullText, isLoading: true } : msg
+            )
+          );
+        }
       }
-    } catch (err) {
-      console.error('Error sending message:', err);
-      setError('Failed to send message. Please try again.');
-      setMessages(prev => prev.filter(msg => msg.id !== aiMessage.id));
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId ? { ...msg, text: fullText, isLoading: false } : msg
+        )
+      );
+      if (isTTSEnabled && fullText) {
+        speak(fullText, character.voiceSettings);
+      }
+    } catch (error) {
+      console.error('Error sending message to Gemini:', error);
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId ? { ...msg, text: 'Sorry, I encountered an error. Please try again.', isLoading: false, sender: 'ai' } : msg
+        )
+      );
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [inputText, isLoading, geminiChat, character.personalityPrompt, isTTSEnabled, speak, character.voiceSettings]);
 
   const handleClearHistory = () => {
     if (window.confirm("Are you sure you want to clear the chat history for this character?")) {
@@ -144,9 +141,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
   };
 
   const toggleTTS = () => {
-    if (isSpeaking) {
-      stopSpeaking();
-    }
+    if (isSpeaking) stopSpeaking();
     setIsTTSEnabled(prev => !prev);
   };
   
@@ -158,56 +153,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
     }
   };
 
-  // Show error toast if TTS error occurs
-  useEffect(() => {
-    if (ttsError) {
-      const toast = document.createElement('div');
-      toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in-out';
-      toast.textContent = ttsError;
-      document.body.appendChild(toast);
-      
-      // Remove toast after 3 seconds
-      const timeout = setTimeout(() => {
-        toast.remove();
-      }, 3000);
-      
-      return () => {
-        clearTimeout(timeout);
-        toast.remove();
-      };
-    }
-  }, [ttsError]);
-
-  if (!API_KEY || error) {
+  if (!API_KEY) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center text-center bg-gray-800 p-6">
-        <div className="max-w-md">
-          <h2 className="text-xl font-semibold text-red-400 mb-4">
-            {!API_KEY ? "API Key Missing" : "Error"}
-          </h2>
-          <p className="text-gray-300 mb-2">
-            {!API_KEY 
-              ? "The Gemini API Key (GEMINI_API_KEY) is not configured."
-              : error}
-          </p>
-          <p className="text-gray-400 text-sm mb-6">
-            {!API_KEY 
-              ? "Please ensure it's set in your .env.local file to use the chat features."
-              : "Please try again or contact support if the problem persists."}
-          </p>
-          <button 
-            onClick={onBack}
-            className="w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-          >
-            Back to Character Selection
-          </button>
-        </div>
+      <div className="p-6 flex flex-col h-full items-center justify-center text-center">
+        <h2 className="text-xl font-semibold text-red-400 mb-4">API Key Missing</h2>
+        <p className="text-gray-300">The Gemini API Key (process.env.API_KEY) is not configured.</p>
+        <p className="text-gray-400 text-sm">Please ensure it's set in your environment to use the chat features.</p>
+        <button onClick={onBack} className="mt-6 bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-lg">
+          Back to Character Selection
+        </button>
       </div>
     );
   }
 
+
   return (
-    <div className="h-full flex flex-col bg-gray-800">
+    <div className="flex flex-col h-full bg-gray-800">
       <header className="p-2 sm:p-4 bg-gray-700 shadow-md flex items-center justify-between">
         <div className="flex items-center min-w-0">
           <IconButton 
@@ -295,18 +256,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
           />
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fade-in-out {
-          0% { opacity: 0; transform: translateY(1rem); }
-          10% { opacity: 1; transform: translateY(0); }
-          90% { opacity: 1; transform: translateY(0); }
-          100% { opacity: 0; transform: translateY(-1rem); }
-        }
-        .animate-fade-in-out {
-          animation: fade-in-out 3s ease-in-out forwards;
-        }
-      `}</style>
     </div>
   );
 };

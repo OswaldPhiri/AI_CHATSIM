@@ -9,24 +9,15 @@ import { v4 as uuidv4 } from 'uuid';
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.CharacterSelection);
   const [characters, setCharacters] = useState<Character[]>(() => {
-    try {
-      const savedCharacters = localStorage.getItem(LOCAL_STORAGE_CHARACTERS_KEY);
-      const customCharacters = savedCharacters ? JSON.parse(savedCharacters) : [];
-      return [...PREDEFINED_CHARACTERS, ...customCharacters];
-    } catch (error) {
-      console.error('Error loading saved characters:', error);
-      return PREDEFINED_CHARACTERS;
-    }
+    const savedCharacters = localStorage.getItem(LOCAL_STORAGE_CHARACTERS_KEY);
+    const customCharacters = savedCharacters ? JSON.parse(savedCharacters) : [];
+    return [...PREDEFINED_CHARACTERS, ...customCharacters];
   });
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
 
   useEffect(() => {
-    try {
-      const customCharacters = characters.filter(c => !c.isPredefined);
-      localStorage.setItem(LOCAL_STORAGE_CHARACTERS_KEY, JSON.stringify(customCharacters));
-    } catch (error) {
-      console.error('Error saving characters:', error);
-    }
+    const customCharacters = characters.filter(c => !c.isPredefined);
+    localStorage.setItem(LOCAL_STORAGE_CHARACTERS_KEY, JSON.stringify(customCharacters));
   }, [characters]);
 
   const handleSelectCharacter = useCallback((character: Character) => {
@@ -62,36 +53,21 @@ const App: React.FC = () => {
     }
   }, [selectedCharacter]);
 
+
   const renderView = () => {
     switch (currentView) {
       case AppView.CharacterCreation:
-        return (
-          <CharacterCreator 
-            onSave={handleSaveCharacter} 
-            onCancel={handleBackToSelection} 
-          />
-        );
+        return <CharacterCreator onSave={handleSaveCharacter} onCancel={handleBackToSelection} />;
       case AppView.Chat:
-        if (!selectedCharacter) {
-          setCurrentView(AppView.CharacterSelection);
-          return null;
+        if (selectedCharacter) {
+          return <ChatWindow character={selectedCharacter} onBack={handleBackToSelection} />;
         }
-        return (
-          <ChatWindow 
-            character={selectedCharacter} 
-            onBack={handleBackToSelection} 
-          />
-        );
+        // Fallback if somehow in chat view without a character
+        setCurrentView(AppView.CharacterSelection); 
+        return null;
       case AppView.CharacterSelection:
       default:
-        return (
-          <CharacterSelector 
-            characters={characters} 
-            onSelectCharacter={handleSelectCharacter} 
-            onCreateCharacter={handleCreateCharacter} 
-            onDeleteCharacter={handleDeleteCharacter} 
-          />
-        );
+        return <CharacterSelector characters={characters} onSelectCharacter={handleSelectCharacter} onCreateCharacter={handleCreateCharacter} onDeleteCharacter={handleDeleteCharacter} />;
     }
   };
 
@@ -101,8 +77,8 @@ const App: React.FC = () => {
         {renderView()}
       </div>
       <footer className="text-center mt-2 sm:mt-4 text-xs text-gray-500 px-2">
-        <p>AI Character Chat Simulator. Powered by Oswaldinho the great.</p>
-        <p className="hidden sm:block">Ensure your Gemini API Key is configured in your environment (GEMINI_API_KEY).</p>
+        <p>AI Character Chat Simulator. Powered by Gemini.</p>
+        <p className="hidden sm:block">Ensure your Gemini API Key is configured in your environment (process.env.API_KEY).</p>
       </footer>
     </div>
   );

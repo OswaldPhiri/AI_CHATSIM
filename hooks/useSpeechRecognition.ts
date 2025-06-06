@@ -6,23 +6,6 @@ interface UseSpeechRecognitionOptions {
   onEnd?: () => void;
 }
 
-interface SpeechRecognitionErrorEvent {
-  error: string;
-  message: string;
-}
-
-interface SpeechRecognitionEvent {
-  resultIndex: number;
-  results: {
-    [index: number]: {
-      [index: number]: {
-        transcript: string;
-      };
-      isFinal: boolean;
-    };
-  };
-}
-
 // Interface for the SpeechRecognition instance
 interface SpeechRecognitionAPI extends EventTarget {
   continuous: boolean;
@@ -35,9 +18,9 @@ interface SpeechRecognitionAPI extends EventTarget {
   onaudiostart: (() => void) | null;
   onaudioend: (() => void) | null;
   onend: (() => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onerror: ((event: any) => void) | null; // SpeechRecognitionErrorEvent
   onnomatch: (() => void) | null;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onresult: ((event: any) => void) | null; // SpeechRecognitionEvent
   onsoundstart: (() => void) | null;
   onsoundend: (() => void) | null;
   onspeechstart: (() => void) | null;
@@ -79,7 +62,7 @@ export const useSpeechRecognition = ({
       recognition.interimResults = true; 
       recognition.lang = 'en-US';
 
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
+      recognition.onresult = (event: any) => { // SpeechRecognitionEvent
         let finalTranscript = '';
         let interimTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -92,10 +75,11 @@ export const useSpeechRecognition = ({
         if (finalTranscript) {
           onResult(finalTranscript);
         }
+        // Interim results are not passed to onResult in this implementation
       };
 
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        console.error('Speech recognition error:', event.error, event.message);
+      recognition.onerror = (event: any) => { // SpeechRecognitionErrorEvent
+        console.error('Speech recognition error', event.error);
         if (onError) onError(event.error);
         setIsListening(false);
       };
@@ -114,7 +98,8 @@ export const useSpeechRecognition = ({
         recognitionRef.current.abort();
       }
     };
-  }, [onResult, onError, onEnd]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Dependencies: onResult, onError, onEnd callbacks should be stable (e.g. memoized with useCallback) if they cause re-runs.
 
   const startListening = useCallback(() => {
     if (recognitionRef.current && !isListening) {

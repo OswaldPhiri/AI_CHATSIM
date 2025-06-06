@@ -5,64 +5,40 @@ export const useTextToSpeech = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [browserSupportsTTS, setBrowserSupportsTTS] = useState(false);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
     if ('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window) {
-      try {
-        setBrowserSupportsTTS(true);
-        setError(null);
-        const utterance = new SpeechSynthesisUtterance();
-        utteranceRef.current = utterance;
-        
-        utterance.onstart = () => {
-          setIsSpeaking(true);
-          setError(null);
-        };
-        
-        utterance.onend = () => {
-          setIsSpeaking(false);
-          setError(null);
-        };
-        
-        utterance.onerror = (event) => {
-          console.error('Speech synthesis error:', event);
-          setIsSpeaking(false);
-          setError('Speech synthesis failed. Please try again.');
-        };
+      setBrowserSupportsTTS(true);
+      const utterance = new SpeechSynthesisUtterance();
+      utteranceRef.current = utterance;
+      
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = (event) => {
+        console.error('Speech synthesis error', event);
+        setIsSpeaking(false);
+      };
 
-        // Load and update available voices
-        const loadVoices = () => {
-          try {
-            const voices = window.speechSynthesis.getVoices();
-            setAvailableVoices(voices);
-            setError(null);
-          } catch (err) {
-            console.error('Error loading voices:', err);
-            setError('Failed to load available voices.');
-          }
-        };
-        
-        if (window.speechSynthesis.onvoiceschanged !== undefined) {
-          window.speechSynthesis.onvoiceschanged = loadVoices;
-        }
-        loadVoices(); // Initial call
-
-        // Cancel speech if component unmounts while speaking
-        return () => {
-          if (window.speechSynthesis.speaking) {
-            window.speechSynthesis.cancel();
-          }
-        };
-      } catch (err) {
-        console.error('Error initializing text-to-speech:', err);
-        setBrowserSupportsTTS(false);
-        setError('Text-to-speech initialization failed.');
+      // Load and update available voices
+      const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        setAvailableVoices(voices);
+      };
+      
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
       }
+      loadVoices(); // Initial call
+
+      // Cancel speech if component unmounts while speaking
+      return () => {
+        if (window.speechSynthesis.speaking) {
+          window.speechSynthesis.cancel();
+        }
+      };
     } else {
       setBrowserSupportsTTS(false);
-      setError('Text-to-speech is not supported in this browser.');
       console.warn('Text-to-Speech API not supported in this browser.');
     }
   }, []);
@@ -98,47 +74,32 @@ export const useTextToSpeech = () => {
   }, [availableVoices]);
 
   const speak = useCallback((text: string, settings: VoiceSettings = {}) => {
-    if (!browserSupportsTTS || !utteranceRef.current) {
-      setError('Text-to-speech is not available.');
-      return;
-    }
+    if (!browserSupportsTTS || !utteranceRef.current) return;
 
-    try {
-      if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
-      }
-      
-      const utterance = utteranceRef.current;
-      utterance.text = text;
-      
-      // Apply voice settings
-      const voice = findBestVoice(settings);
-      if (voice) {
-        utterance.voice = voice;
-      }
-      
-      utterance.lang = settings.lang || 'en-US';
-      utterance.rate = Math.min(Math.max(settings.rate || 1, 0.1), 10); // Clamp between 0.1 and 10
-      utterance.pitch = Math.min(Math.max(settings.pitch || 1, 0.5), 2); // Clamp between 0.5 and 2
-      
-      window.speechSynthesis.speak(utterance);
-      setError(null);
-    } catch (err) {
-      console.error('Error speaking text:', err);
-      setError('Failed to speak text. Please try again.');
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel(); // Stop current speech before starting new one
     }
+    
+    const utterance = utteranceRef.current;
+    utterance.text = text;
+    
+    // Apply voice settings
+    const voice = findBestVoice(settings);
+    if (voice) {
+      utterance.voice = voice;
+    }
+    
+    utterance.lang = settings.lang || 'en-US';
+    utterance.rate = settings.rate || 1;
+    utterance.pitch = settings.pitch || 1;
+    
+    window.speechSynthesis.speak(utterance);
   }, [browserSupportsTTS, findBestVoice]);
 
   const stopSpeaking = useCallback(() => {
     if (browserSupportsTTS && window.speechSynthesis.speaking) {
-      try {
-        window.speechSynthesis.cancel();
-        setIsSpeaking(false);
-        setError(null);
-      } catch (err) {
-        console.error('Error stopping speech:', err);
-        setError('Failed to stop speech.');
-      }
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
     }
   }, [browserSupportsTTS]);
 
@@ -147,7 +108,6 @@ export const useTextToSpeech = () => {
     stopSpeaking, 
     isSpeaking, 
     browserSupportsTTS,
-    availableVoices,
-    error
+    availableVoices 
   };
 };

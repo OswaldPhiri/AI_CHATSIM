@@ -21,26 +21,24 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({ characters, onSel
         {characters.map(char => (
           <div 
             key={char.id} 
-            className="bg-gray-700 p-2 sm:p-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors cursor-pointer group"
+            className="bg-gray-700 p-3 sm:p-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors cursor-pointer flex items-center justify-between group"
             onClick={() => onSelectCharacter(char)}
           >
-            <div className="flex items-start gap-2 sm:gap-4">
-              <span className="text-2xl sm:text-3xl flex-shrink-0 mt-1">{char.avatar}</span>
-              <div className="flex-grow min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-base sm:text-lg font-semibold truncate">{char.name}</h3>
-                  {!char.isPredefined && (
-                    <IconButton
-                      icon={<i className="fas fa-trash text-red-500 hover:text-red-400"></i>}
-                      onClick={(e) => { e.stopPropagation(); onDeleteCharacter(char.id); }}
-                      className="opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                      ariaLabel="Delete character"
-                    />
-                  )}
-                </div>
-                <p className="text-xs sm:text-sm text-gray-400 group-hover:text-gray-200 line-clamp-2 mt-0.5">{char.bio}</p>
+            <div className="flex items-center min-w-0">
+              <span className="text-2xl sm:text-3xl mr-2 sm:mr-4 flex-shrink-0">{char.avatar}</span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base sm:text-lg font-semibold truncate">{char.name}</h3>
+                <p className="text-xs sm:text-sm text-gray-400 group-hover:text-gray-200 truncate">{char.bio}</p>
               </div>
             </div>
+            {!char.isPredefined && (
+              <IconButton
+                icon={<i className="fas fa-trash text-red-500 hover:text-red-400"></i>}
+                onClick={(e) => { e.stopPropagation(); onDeleteCharacter(char.id); }}
+                className="opacity-50 group-hover:opacity-100 transition-opacity ml-2 flex-shrink-0"
+                ariaLabel="Delete character"
+              />
+            )}
           </div>
         ))}
       </div>
