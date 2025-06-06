@@ -1,0 +1,7 @@
+{
+  "name": "AI Character Chat",
+  "description": "An interactive chat application where users can converse with various AI-powered characters, create their own custom characters, and engage in dynamic conversations. Features include speech-to-text input and text-to-speech output.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
