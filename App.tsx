@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Character, AppView } from './types';
 import { PREDEFINED_CHARACTERS, LOCAL_STORAGE_CHARACTERS_KEY } from './constants';
@@ -73,13 +72,13 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-gray-800">
-      <div className="w-full max-w-2xl bg-gray-800 shadow-2xl rounded-lg overflow-hidden h-[calc(100vh-4rem)] max-h-[700px]">
+    <div className="min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 bg-gradient-to-br from-slate-900 to-gray-800">
+      <div className="w-full max-w-2xl bg-gray-800 shadow-2xl rounded-lg overflow-hidden h-[calc(100vh-1rem)] sm:h-[calc(100vh-4rem)] max-h-[800px] sm:max-h-[700px]">
         {renderView()}
       </div>
-       <footer className="text-center mt-4 text-xs text-gray-500">
+      <footer className="text-center mt-2 sm:mt-4 text-xs text-gray-500 px-2">
         <p>AI Character Chat Simulator. Powered by Gemini.</p>
-        <p>Ensure your Gemini API Key is configured in your environment (process.env.API_KEY).</p>
+        <p className="hidden sm:block">Ensure your Gemini API Key is configured in your environment (process.env.API_KEY).</p>
       </footer>
     </div>
   );

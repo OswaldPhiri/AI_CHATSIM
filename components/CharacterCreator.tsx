@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Character } from '../types';
 
@@ -25,9 +24,9 @@ const CharacterCreator: React.FC<CharacterCreatorProps> = ({ onSave, onCancel })
   const popularEmojis = ['😀', '🤖', '🧠', '🧙', '🦸', '🧑‍🚀', '🕵️', '👑', '💡', '🐉'];
 
   return (
-    <div className="p-6 bg-gray-800 text-gray-100 h-full flex flex-col">
-      <h2 className="text-2xl font-bold mb-6 text-sky-400 text-center">Create New Character</h2>
-      <form onSubmit={handleSubmit} className="space-y-4 flex-grow overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
+    <div className="p-3 sm:p-6 bg-gray-800 text-gray-100 h-full flex flex-col">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-sky-400 text-center">Create New Character</h2>
+      <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 flex-grow overflow-y-auto pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-300">Name</label>
           <input
@@ -35,28 +34,30 @@ const CharacterCreator: React.FC<CharacterCreatorProps> = ({ onSave, onCancel })
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+            className="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-1.5 sm:py-2 px-2 sm:px-3 text-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
             placeholder="E.g., Captain Rex"
             required
           />
         </div>
         <div>
           <label htmlFor="avatar" className="block text-sm font-medium text-gray-300">Avatar (Emoji)</label>
-          <select 
-            id="avatar" 
-            value={avatar} 
-            onChange={(e) => setAvatar(e.target.value)}
-            className="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
-          >
-            {popularEmojis.map(emoji => <option key={emoji} value={emoji}>{emoji}</option>)}
-          </select>
-           <input
-            type="text"
-            value={avatar}
-            onChange={(e) => setAvatar(e.target.value.slice(0,2))} // Limit to a couple chars for emoji
-            className="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
-            placeholder="Or type an emoji here"
-          />
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
+            <select 
+              id="avatar" 
+              value={avatar} 
+              onChange={(e) => setAvatar(e.target.value)}
+              className="block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-1.5 sm:py-2 px-2 sm:px-3 text-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+            >
+              {popularEmojis.map(emoji => <option key={emoji} value={emoji}>{emoji}</option>)}
+            </select>
+            <input
+              type="text"
+              value={avatar}
+              onChange={(e) => setAvatar(e.target.value.slice(0,2))}
+              className="block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-1.5 sm:py-2 px-2 sm:px-3 text-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+              placeholder="Or type an emoji"
+            />
+          </div>
         </div>
         <div>
           <label htmlFor="bio" className="block text-sm font-medium text-gray-300">Bio</label>
@@ -64,36 +65,36 @@ const CharacterCreator: React.FC<CharacterCreatorProps> = ({ onSave, onCancel })
             id="bio"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            rows={3}
-            className="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+            rows={2}
+            className="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-1.5 sm:py-2 px-2 sm:px-3 text-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
             placeholder="A short description of the character."
             required
           />
         </div>
         <div>
-          <label htmlFor="personalityPrompt" className="block text-sm font-medium text-gray-300">Personality Prompt (System Prompt for AI)</label>
+          <label htmlFor="personalityPrompt" className="block text-sm font-medium text-gray-300">Personality Prompt</label>
           <textarea
             id="personalityPrompt"
             value={personalityPrompt}
             onChange={(e) => setPersonalityPrompt(e.target.value)}
-            rows={5}
-            className="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+            rows={4}
+            className="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-1.5 sm:py-2 px-2 sm:px-3 text-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
             placeholder="E.g., You are a brave space captain. Speak confidently and use space-related slang."
             required
           />
           <p className="mt-1 text-xs text-gray-400">This prompt guides the AI's personality. Be descriptive!</p>
         </div>
-        <div className="flex space-x-3 pt-4">
+        <div className="flex space-x-2 sm:space-x-3 pt-3 sm:pt-4">
           <button
             type="submit"
-            className="flex-1 bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="flex-1 bg-green-600 hover:bg-green-500 text-white font-semibold py-1.5 sm:py-2 px-3 sm:px-4 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-400 text-sm sm:text-base"
           >
             Save Character
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold py-1.5 sm:py-2 px-3 sm:px-4 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 text-sm sm:text-base"
           >
             Cancel
           </button>
