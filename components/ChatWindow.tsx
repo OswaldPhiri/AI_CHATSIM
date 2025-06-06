@@ -14,7 +14,9 @@ interface ChatWindowProps {
   onBack: () => void;
 }
 
-const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY;
+console.log('API Key available:', !!API_KEY);
+console.log('Environment variables:', process.env);
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -51,7 +53,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
     }
 
     // Initialize Gemini Chat session
+    console.log('Initializing chat with API key:', !!API_KEY);
     if (!API_KEY || error) {
+      console.log('API Key missing or error:', { hasKey: !!API_KEY, error });
       setError("API Key is not configured");
       return;
     }
@@ -176,33 +180,34 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
 
   if (!API_KEY || error) {
     return (
-      <div className="p-6 flex flex-col h-full items-center justify-center text-center">
-        <h2 className="text-xl font-semibold text-red-400 mb-4">
-          {!API_KEY ? "API Key Missing" : "Error"}
-        </h2>
-        <p className="text-gray-300">
-          {!API_KEY 
-            ? "The Gemini API Key (process.env.API_KEY) is not configured."
-            : error}
-        </p>
-        <p className="text-gray-400 text-sm mt-2">
-          {!API_KEY 
-            ? "Please ensure it's set in your environment to use the chat features."
-            : "Please try again or contact support if the problem persists."}
-        </p>
-        <button 
-          onClick={onBack} 
-          className="mt-6 bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-        >
-          Back to Character Selection
-        </button>
+      <div className="h-full w-full flex flex-col items-center justify-center text-center bg-gray-800 p-6">
+        <div className="max-w-md">
+          <h2 className="text-xl font-semibold text-red-400 mb-4">
+            {!API_KEY ? "API Key Missing" : "Error"}
+          </h2>
+          <p className="text-gray-300 mb-2">
+            {!API_KEY 
+              ? "The Gemini API Key (GEMINI_API_KEY) is not configured."
+              : error}
+          </p>
+          <p className="text-gray-400 text-sm mb-6">
+            {!API_KEY 
+              ? "Please ensure it's set in your .env.local file to use the chat features."
+              : "Please try again or contact support if the problem persists."}
+          </p>
+          <button 
+            onClick={onBack}
+            className="w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+          >
+            Back to Character Selection
+          </button>
+        </div>
       </div>
     );
   }
 
-
   return (
-    <div className="flex flex-col h-full bg-gray-800">
+    <div className="h-full flex flex-col bg-gray-800">
       <header className="p-2 sm:p-4 bg-gray-700 shadow-md flex items-center justify-between">
         <div className="flex items-center min-w-0">
           <IconButton 

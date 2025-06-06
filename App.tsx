@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { FC } from 'react';
 import { Character, AppView } from './types';
 import { PREDEFINED_CHARACTERS, LOCAL_STORAGE_CHARACTERS_KEY } from './constants';
 import CharacterSelector from './components/CharacterSelector';
@@ -7,12 +6,12 @@ import CharacterCreator from './components/CharacterCreator';
 import ChatWindow from './components/ChatWindow';
 import { v4 as uuidv4 } from 'uuid';
 
-const App: FC = () => {
+const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.CharacterSelection);
   const [characters, setCharacters] = useState<Character[]>(() => {
     try {
       const savedCharacters = localStorage.getItem(LOCAL_STORAGE_CHARACTERS_KEY);
-      const customCharacters = savedCharacters ? JSON.parse(savedCharacters) as Character[] : [];
+      const customCharacters = savedCharacters ? JSON.parse(savedCharacters) : [];
       return [...PREDEFINED_CHARACTERS, ...customCharacters];
     } catch (error) {
       console.error('Error loading saved characters:', error);
@@ -23,7 +22,7 @@ const App: FC = () => {
 
   useEffect(() => {
     try {
-      const customCharacters = characters.filter((c: Character) => !c.isPredefined);
+      const customCharacters = characters.filter(c => !c.isPredefined);
       localStorage.setItem(LOCAL_STORAGE_CHARACTERS_KEY, JSON.stringify(customCharacters));
     } catch (error) {
       console.error('Error saving characters:', error);
@@ -103,7 +102,7 @@ const App: FC = () => {
       </div>
       <footer className="text-center mt-2 sm:mt-4 text-xs text-gray-500 px-2">
         <p>AI Character Chat Simulator. Powered by Oswaldinho the great.</p>
-        <p className="hidden sm:block">Ensure your Gemini API Key is configured in your environment (NEXT_PUBLIC_GEMINI_API_KEY).</p>
+        <p className="hidden sm:block">Ensure your Gemini API Key is configured in your environment (GEMINI_API_KEY).</p>
       </footer>
     </div>
   );
