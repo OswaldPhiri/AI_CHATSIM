@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import type { FC } from 'react';
 import { Character, AppView } from './types';
 import { PREDEFINED_CHARACTERS, LOCAL_STORAGE_CHARACTERS_KEY } from './constants';
 import CharacterSelector from './components/CharacterSelector';
@@ -6,18 +7,27 @@ import CharacterCreator from './components/CharacterCreator';
 import ChatWindow from './components/ChatWindow';
 import { v4 as uuidv4 } from 'uuid';
 
-const App: React.FC = () => {
+const App: FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.CharacterSelection);
   const [characters, setCharacters] = useState<Character[]>(() => {
-    const savedCharacters = localStorage.getItem(LOCAL_STORAGE_CHARACTERS_KEY);
-    const customCharacters = savedCharacters ? JSON.parse(savedCharacters) : [];
-    return [...PREDEFINED_CHARACTERS, ...customCharacters];
+    try {
+      const savedCharacters = localStorage.getItem(LOCAL_STORAGE_CHARACTERS_KEY);
+      const customCharacters = savedCharacters ? JSON.parse(savedCharacters) as Character[] : [];
+      return [...PREDEFINED_CHARACTERS, ...customCharacters];
+    } catch (error) {
+      console.error('Error loading saved characters:', error);
+      return PREDEFINED_CHARACTERS;
+    }
   });
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
 
   useEffect(() => {
-    const customCharacters = characters.filter(c => !c.isPredefined);
-    localStorage.setItem(LOCAL_STORAGE_CHARACTERS_KEY, JSON.stringify(customCharacters));
+    try {
+      const customCharacters = characters.filter((c: Character) => !c.isPredefined);
+      localStorage.setItem(LOCAL_STORAGE_CHARACTERS_KEY, JSON.stringify(customCharacters));
+    } catch (error) {
+      console.error('Error saving characters:', error);
+    }
   }, [characters]);
 
   const handleSelectCharacter = useCallback((character: Character) => {
@@ -53,21 +63,36 @@ const App: React.FC = () => {
     }
   }, [selectedCharacter]);
 
-
   const renderView = () => {
     switch (currentView) {
       case AppView.CharacterCreation:
-        return <CharacterCreator onSave={handleSaveCharacter} onCancel={handleBackToSelection} />;
+        return (
+          <CharacterCreator 
+            onSave={handleSaveCharacter} 
+            onCancel={handleBackToSelection} 
+          />
+        );
       case AppView.Chat:
-        if (selectedCharacter) {
-          return <ChatWindow character={selectedCharacter} onBack={handleBackToSelection} />;
+        if (!selectedCharacter) {
+          setCurrentView(AppView.CharacterSelection);
+          return null;
         }
-        // Fallback if somehow in chat view without a character
-        setCurrentView(AppView.CharacterSelection); 
-        return null;
+        return (
+          <ChatWindow 
+            character={selectedCharacter} 
+            onBack={handleBackToSelection} 
+          />
+        );
       case AppView.CharacterSelection:
       default:
-        return <CharacterSelector characters={characters} onSelectCharacter={handleSelectCharacter} onCreateCharacter={handleCreateCharacter} onDeleteCharacter={handleDeleteCharacter} />;
+        return (
+          <CharacterSelector 
+            characters={characters} 
+            onSelectCharacter={handleSelectCharacter} 
+            onCreateCharacter={handleCreateCharacter} 
+            onDeleteCharacter={handleDeleteCharacter} 
+          />
+        );
     }
   };
 
@@ -77,8 +102,8 @@ const App: React.FC = () => {
         {renderView()}
       </div>
       <footer className="text-center mt-2 sm:mt-4 text-xs text-gray-500 px-2">
-        <p>AI Character Chat Simulator. Powered by Gemini.</p>
-        <p className="hidden sm:block">Ensure your Gemini API Key is configured in your environment (process.env.API_KEY).</p>
+        <p>AI Character Chat Simulator. Powered by Oswaldinho the great.</p>
+        <p className="hidden sm:block">Ensure your Gemini API Key is configured in your environment (NEXT_PUBLIC_GEMINI_API_KEY).</p>
       </footer>
     </div>
   );
