@@ -1,22 +1,29 @@
-
 import React from 'react';
 
 interface IconButtonProps {
   icon: React.ReactNode;
-  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onClick: () => void;
   className?: string;
   disabled?: boolean;
-  ariaLabel: string;
+  ariaLabel?: string;
 }
 
-const IconButton: React.FC<IconButtonProps> = ({ icon, onClick, className = '', disabled = false, ariaLabel }) => {
+const IconButton: React.FC<IconButtonProps> = ({
+  icon,
+  onClick,
+  className = '',
+  disabled = false,
+  ariaLabel,
+}) => {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
-      className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-opacity-50 ${
-        disabled ? 'text-gray-500 cursor-not-allowed' : 'text-sky-400 hover:bg-gray-700'
+      className={`inline-flex items-center justify-center transition-all duration-200 ${
+        disabled
+          ? 'opacity-50 cursor-not-allowed bg-[var(--button-disabled)]'
+          : 'hover:bg-[var(--bg-hover)] active:scale-95 bg-[var(--bg-tertiary)]'
       } ${className}`}
     >
       {icon}

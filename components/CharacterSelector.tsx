@@ -1,62 +1,185 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Character } from '../types';
+import { AVAILABLE_CATEGORIES } from '../constants';
 import IconButton from './IconButton';
+import '../styles/animations.css';
 
 interface CharacterSelectorProps {
   characters: Character[];
   onSelectCharacter: (character: Character) => void;
   onCreateCharacter: () => void;
   onDeleteCharacter: (characterId: string) => void;
+  onEditCharacter: (character: Character) => void;
+  onToggleFavorite: (characterId: string) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  selectedCategory: string | null;
+  onCategoryChange: (category: string | null) => void;
+  showFavoritesOnly: boolean;
+  onToggleFavoritesOnly: () => void;
+  sortOrder: 'name' | 'category';
+  onSortOrderChange: (order: 'name' | 'category') => void;
 }
 
-const CharacterSelector: React.FC<CharacterSelectorProps> = ({ characters, onSelectCharacter, onCreateCharacter, onDeleteCharacter }) => {
+const CharacterSelector: React.FC<CharacterSelectorProps> = ({
+  characters,
+  onSelectCharacter,
+  onCreateCharacter,
+  onDeleteCharacter,
+  onEditCharacter,
+  onToggleFavorite,
+  searchQuery,
+  onSearchChange,
+  selectedCategory,
+  onCategoryChange,
+  showFavoritesOnly,
+  onToggleFavoritesOnly,
+  sortOrder,
+  onSortOrderChange,
+}) => {
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+
   return (
-    <div className="p-3 sm:p-6 flex flex-col h-full bg-gray-800 text-gray-100">
-      <header className="mb-4 sm:mb-6 text-center">
-        <h1 className="text-2xl sm:text-3xl font-bold text-sky-400">Choose Your Chat Partner</h1>
-        <p className="text-sm sm:text-base text-gray-400 mt-1">Select a character to start chatting or create your own!</p>
+    <div className="p-3 sm:p-6 bg-[var(--bg-secondary)] text-[var(--text-primary)] h-full flex flex-col">
+      <header className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-[var(--accent-primary)] text-center animate-fade-in">
+          Choose Your Character
+        </h1>
+        <p className="text-sm sm:text-base text-[var(--text-tertiary)] text-center mt-1 animate-fade-in-delay">
+          Select a character to chat with or create your own
+        </p>
       </header>
-      
-      <div className="flex-grow overflow-y-auto space-y-2 sm:space-y-3 pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
-        {characters.map(char => (
-          <div 
-            key={char.id} 
-            className="bg-gray-700 hover:bg-sky-700 transition-colors cursor-pointer rounded-lg shadow-md group"
-            onClick={() => onSelectCharacter(char)}
-          >
-            <div className="p-3 sm:p-4">
-              <div className="flex items-start gap-3">
-                <span className="text-2xl sm:text-3xl flex-shrink-0 mt-1">{char.avatar}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-base sm:text-lg font-semibold text-sky-300 group-hover:text-white truncate">
-                      {char.name}
-                    </h3>
-                    {!char.isPredefined && (
-                      <IconButton
-                        icon={<i className="fas fa-trash text-red-500 hover:text-red-400"></i>}
-                        onClick={(e) => { e.stopPropagation(); onDeleteCharacter(char.id); }}
-                        className="opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                        ariaLabel="Delete character"
-                      />
+
+      <div className="space-y-3 sm:space-y-4 animate-slide-down">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+          <div className="relative flex-grow">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search characters..."
+              className="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg py-2 px-3 pl-8 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus)]"
+            />
+            <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-tertiary)]"></i>
+          </div>
+          <div className="flex gap-2">
+            <select
+              value={selectedCategory || ''}
+              onChange={(e) => onCategoryChange(e.target.value || null)}
+              className="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg py-2 px-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus)]"
+            >
+              <option value="">All Categories</option>
+              {AVAILABLE_CATEGORIES.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+            <button
+              onClick={onToggleFavoritesOnly}
+              className={`px-3 py-2 rounded-lg transition-colors duration-200 ${
+                showFavoritesOnly 
+                  ? 'bg-[var(--accent-primary)] text-white' 
+                  : 'bg-[var(--input-bg)] text-[var(--text-primary)] border border-[var(--input-border)]'
+              }`}
+            >
+              <i className="fas fa-star"></i>
+            </button>
+            <select
+              value={sortOrder}
+              onChange={(e) => onSortOrderChange(e.target.value as 'name' | 'category')}
+              className="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg py-2 px-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus)]"
+            >
+              <option value="name">Sort by Name</option>
+              <option value="category">Sort by Category</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex-grow overflow-y-auto pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-[var(--bg-tertiary)] scrollbar-track-[var(--bg-secondary)]">
+        {characters.length === 0 ? (
+          <div className="text-center py-8 text-[var(--text-tertiary)] animate-fade-in">
+            <p>No characters found. Try adjusting your search or filters.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            {characters.map(character => (
+              <div
+                key={character.id}
+                className="bg-[var(--bg-tertiary)] rounded-lg p-3 sm:p-4 hover:shadow-lg transition-all duration-200 cursor-pointer group animate-fade-in"
+                onClick={() => onSelectCharacter(character)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl sm:text-3xl">{character.avatar}</span>
+                    <div>
+                      <h3 className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors duration-200">
+                        {character.name}
+                      </h3>
+                      <p className="text-sm text-[var(--text-tertiary)] line-clamp-2">
+                        {character.bio}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <IconButton
+                      icon={<i className={`fas fa-star ${character.isFavorite ? 'text-yellow-400' : 'text-[var(--text-tertiary)]'}`}></i>}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleFavorite(character.id);
+                      }}
+                      ariaLabel={character.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                      className="hover:bg-[var(--bg-secondary)] p-1.5 sm:p-2 rounded-full transition-all duration-200 hover-lift"
+                    />
+                    {!character.isPredefined && (
+                      <>
+                        <IconButton
+                          icon={<i className="fas fa-edit text-[var(--accent-primary)]"></i>}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditCharacter(character);
+                          }}
+                          ariaLabel="Edit character"
+                          className="hover:bg-[var(--bg-secondary)] p-1.5 sm:p-2 rounded-full transition-all duration-200 hover-lift"
+                        />
+                        <IconButton
+                          icon={<i className="fas fa-trash-alt text-[var(--error-color)]"></i>}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`Are you sure you want to delete ${character.name}?`)) {
+                              onDeleteCharacter(character.id);
+                            }
+                          }}
+                          ariaLabel="Delete character"
+                          className="hover:bg-[var(--bg-secondary)] p-1.5 sm:p-2 rounded-full transition-all duration-200 hover-lift"
+                        />
+                      </>
                     )}
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-300 group-hover:text-gray-100 mt-1 line-clamp-2 sm:line-clamp-3">
-                    {char.bio}
-                  </p>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {character.categories.map(category => (
+                    <span
+                      key={category}
+                      className="text-xs px-2 py-1 bg-[var(--bg-secondary)] text-[var(--text-tertiary)] rounded-full"
+                    >
+                      {category}
+                    </span>
+                  ))}
                 </div>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
-      
-      <button
-        onClick={onCreateCharacter}
-        className="mt-4 sm:mt-6 w-full bg-green-600 hover:bg-green-500 text-white font-semibold py-2 sm:py-3 px-4 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 text-sm sm:text-base"
-      >
-        <i className="fas fa-plus mr-2"></i>Create New Character
-      </button>
+
+      <div className="mt-4 animate-slide-up">
+        <button
+          onClick={onCreateCharacter}
+          className="w-full bg-[var(--button-primary)] hover:bg-[var(--button-hover)] text-[var(--button-text)] font-semibold py-2 px-4 rounded-lg transition-colors duration-200 hover-lift"
+        >
+          Create New Character
+        </button>
+      </div>
     </div>
   );
 };

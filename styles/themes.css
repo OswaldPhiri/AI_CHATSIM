@@ -1,0 +1,74 @@
+:root {
+  /* Common variables */
+  --transition-speed: 0.2s;
+  --border-radius: 0.5rem;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Dark theme (default) */
+:root {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3d3d3d;
+  --bg-hover: #4d4d4d;
+  --text-primary: #ffffff;
+  --text-secondary: #e5e5e5;
+  --text-tertiary: #a3a3a3;
+  --text-hover: #f5f5f5;
+  --accent-primary: #0ea5e9;
+  --accent-hover: #0284c7;
+  --accent-secondary: #0369a1;
+  --border-color: #404040;
+  --input-bg: #262626;
+  --input-border: #404040;
+  --input-focus: #0ea5e9;
+  --button-primary: #0ea5e9;
+  --button-hover: #0284c7;
+  --button-secondary: #404040;
+  --button-secondary-hover: #4d4d4d;
+  --button-disabled: #262626;
+  --button-text: #ffffff;
+  --error-color: #ef4444;
+  --success-color: #22c55e;
+  --warning-color: #f59e0b;
+  --info-color: #3b82f6;
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #e5e5e5;
+  --bg-hover: #d4d4d4;
+  --text-primary: #171717;
+  --text-secondary: #262626;
+  --text-tertiary: #525252;
+  --text-hover: #0a0a0a;
+  --accent-primary: #0ea5e9;
+  --accent-hover: #0284c7;
+  --accent-secondary: #0369a1;
+  --border-color: #d4d4d4;
+  --input-bg: #ffffff;
+  --input-border: #d4d4d4;
+  --input-focus: #0ea5e9;
+  --button-primary: #0ea5e9;
+  --button-hover: #0284c7;
+  --button-secondary: #e5e5e5;
+  --button-secondary-hover: #d4d4d4;
+  --button-disabled: #f5f5f5;
+  --button-text: #ffffff;
+  --error-color: #dc2626;
+  --success-color: #16a34a;
+  --warning-color: #d97706;
+  --info-color: #2563eb;
+}
+
+/* Theme transition */
+* {
+  transition: background-color var(--transition-speed) ease,
+              border-color var(--transition-speed) ease,
+              color var(--transition-speed) ease,
+              box-shadow var(--transition-speed) ease;
+} 

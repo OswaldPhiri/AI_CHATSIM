@@ -21,6 +21,8 @@ export interface Character {
   personalityPrompt: string; // System prompt for Gemini
   isPredefined: boolean;
   voiceSettings?: VoiceSettings; // Optional voice settings for the character
+  categories: string[]; // Array of category tags
+  isFavorite: boolean; // Whether the character is favorited
 }
 
 export enum AppView {

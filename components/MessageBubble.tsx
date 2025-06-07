@@ -7,26 +7,44 @@ interface MessageBubbleProps {
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+  const isAI = message.sender === 'ai';
   const isUser = message.sender === 'user';
-  const bubbleClasses = isUser 
-    ? 'bg-sky-600 text-white self-end rounded-l-lg rounded-tr-lg' 
-    : 'bg-gray-600 text-gray-100 self-start rounded-r-lg rounded-tl-lg';
-  
-  const containerClasses = isUser ? 'flex justify-end' : 'flex justify-start';
 
   return (
-    <div className={`${containerClasses} mb-1.5 sm:mb-2`}>
-      <div className={`p-2 sm:p-3 max-w-[85%] sm:max-w-xl shadow ${bubbleClasses}`}>
-        {message.isLoading && message.sender === 'ai' && !message.text ? (
-          <div className="flex items-center">
-            <LoadingSpinner size="sm" /> <span className="ml-2 text-xs sm:text-sm">Thinking...</span>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} group`}>
+      <div
+        className={`relative max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-2 sm:px-5 sm:py-3 shadow-md transition-all duration-300 ${
+          isAI
+            ? 'bg-[var(--accent-primary)] text-[var(--button-text)] rounded-tl-none hover:bg-[var(--accent-hover)]'
+            : 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-tr-none hover:bg-[var(--bg-hover)]'
+        }`}
+      >
+        {message.isLoading ? (
+          <div className="flex items-center space-x-2 min-w-[60px]">
+            <LoadingSpinner size="sm" />
+            <span className="text-sm animate-pulse text-[var(--text-primary)]">Thinking...</span>
           </div>
         ) : (
-          <p className="whitespace-pre-wrap text-sm sm:text-base">{message.text || (message.isLoading ? "..." : "")}</p>
+          <>
+            <div className="prose prose-sm sm:prose-base prose-invert max-w-none">
+              {message.text.split('\n').map((line, i) => (
+                <p key={i} className="mb-1 last:mb-0">
+                  {line}
+                </p>
+              ))}
+            </div>
+            {isAI && (
+              <div className="absolute -left-2 -top-2 w-8 h-8 bg-[var(--accent-primary)] rounded-full flex items-center justify-center shadow-md transform transition-transform duration-300 group-hover:scale-110">
+                <span className="text-lg">{message.avatar}</span>
+              </div>
+            )}
+            {isUser && (
+              <div className="absolute -right-2 -top-2 w-8 h-8 bg-[var(--bg-tertiary)] rounded-full flex items-center justify-center shadow-md transform transition-transform duration-300 group-hover:scale-110">
+                <i className="fas fa-user text-[var(--text-tertiary)]"></i>
+              </div>
+            )}
+          </>
         )}
-        {/* <span className="block text-xs mt-1 opacity-70">
-          {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </span> */}
       </div>
     </div>
   );

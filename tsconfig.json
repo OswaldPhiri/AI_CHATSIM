@@ -23,8 +23,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
+    /* Type Declarations */
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+
     "paths": {
       "@/*" :  ["./*"]
     }
-  }
+  },
+  "include": ["src/**/*", "src/types/*.d.ts"]
 }

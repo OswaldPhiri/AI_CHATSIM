@@ -8,6 +8,7 @@ import IconButton from './IconButton';
 import LoadingSpinner from './LoadingSpinner';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
+import '../styles/animations.css';
 
 interface ChatWindowProps {
   character: Character;
@@ -168,73 +169,89 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
 
 
   return (
-    <div className="flex flex-col h-full bg-gray-800">
-      <header className="p-2 sm:p-4 bg-gray-700 shadow-md flex items-center justify-between">
-        <div className="flex items-center min-w-0">
-          <IconButton 
-            icon={<i className="fas fa-arrow-left"></i>} 
-            onClick={onBack} 
-            className="mr-2 sm:mr-3 text-sky-400 hover:text-sky-300 transition-colors duration-200"
-            ariaLabel="Back to character selection"
-          />
-          <span className="text-2xl sm:text-3xl mr-2 sm:mr-3 animate-bounce flex-shrink-0">{character.avatar}</span>
-          <div className="min-w-0">
-            <h2 className="text-lg sm:text-xl font-semibold text-sky-400 truncate">{character.name}</h2>
-            <p className="text-xs text-gray-400 truncate">{character.bio}</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-1 sm:space-x-2 ml-2">
-          {browserSupportsSpeechRecognition && (
-            <div className="relative group">
-              <IconButton
-                icon={<i className={`fas ${isTTSEnabled ? 'fa-volume-up text-green-400' : 'fa-volume-mute text-gray-400'} transition-colors duration-200`}></i>}
-                onClick={toggleTTS}
-                ariaLabel={isTTSEnabled ? "Disable Text-to-Speech" : "Enable Text-to-Speech"}
-                className="hover:bg-gray-600 p-1.5 sm:p-2 rounded-full transition-all duration-200"
-              />
-              {isTTSEnabled && (
-                <div className="absolute right-0 mt-2 w-48 bg-gray-700 rounded-lg shadow-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 hidden sm:block">
-                  <p className="text-xs text-gray-300 mb-1">Voice Settings:</p>
-                  <p className="text-xs text-gray-400">
-                    {character.voiceSettings?.voiceName || 'Default Voice'}<br/>
-                    Pitch: {character.voiceSettings?.pitch || 1}<br/>
-                    Rate: {character.voiceSettings?.rate || 1}
-                  </p>
-                </div>
-              )}
+    <div className="flex flex-col h-full bg-[var(--bg-primary)]">
+      <header className="p-4 border-b border-[var(--border-color)]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <IconButton 
+              icon={<i className="fas fa-arrow-left text-[var(--text-primary)] hover:text-[var(--text-hover)]"></i>} 
+              onClick={onBack} 
+              className="mr-2 sm:mr-3 text-[var(--text-primary)] hover:text-[var(--text-hover)] transition-colors duration-200 hover-lift"
+              ariaLabel="Back to character selection"
+            />
+            <span className="text-3xl">{character.avatar}</span>
+            <div>
+              <h2 className="text-xl font-semibold text-[var(--text-primary)]">{character.name}</h2>
+              <p className="text-sm text-[var(--text-tertiary)]">{character.bio}</p>
             </div>
-          )}
-          <IconButton
-            icon={<i className="fas fa-trash-alt text-red-500 hover:text-red-400 transition-colors duration-200"></i>}
-            onClick={handleClearHistory}
-            ariaLabel="Clear chat history"
-            className="hover:bg-gray-600 p-1.5 sm:p-2 rounded-full transition-all duration-200"
-          />
+          </div>
+          <div className="flex items-center space-x-2">
+            {browserSupportsSpeechRecognition && (
+              <div className="relative group">
+                <IconButton
+                  icon={<i className={`fas fa-volume-${isTTSEnabled ? 'up' : 'mute'} text-[var(--accent-primary)]`}></i>}
+                  onClick={toggleTTS}
+                  ariaLabel={isTTSEnabled ? "Disable Text-to-Speech" : "Enable Text-to-Speech"}
+                  className="hover:bg-[var(--bg-tertiary)] p-2 rounded-full transition-all duration-200 hover-lift"
+                />
+                {isTTSEnabled && (
+                  <div className="absolute right-0 mt-2 w-48 bg-[var(--bg-tertiary)] rounded-lg shadow-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 hidden sm:block animate-scale-in">
+                    <p className="text-xs text-[var(--text-tertiary)] mb-1">Voice Settings:</p>
+                    <p className="text-xs text-[var(--text-tertiary)]">
+                      {character.voiceSettings?.voiceName || 'Default Voice'}<br/>
+                      Pitch: {character.voiceSettings?.pitch || 1}<br/>
+                      Rate: {character.voiceSettings?.rate || 1}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            <IconButton
+              icon={<i className="fas fa-trash-alt text-[var(--error-color)]"></i>}
+              onClick={handleClearHistory}
+              ariaLabel="Clear chat history"
+              className="hover:bg-[var(--bg-tertiary)] p-2 rounded-full transition-all duration-200 hover-lift"
+            />
+          </div>
         </div>
       </header>
 
-      <div className="flex-grow overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800">
-        {messages.map(msg => (
-          <MessageBubble key={msg.id} message={msg} />
+      <div className="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-[var(--bg-tertiary)] scrollbar-track-[var(--bg-secondary)]">
+        {messages.map((msg, index) => (
+          <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div
+              className={`max-w-[80%] rounded-lg p-3 ${
+                msg.sender === 'user'
+                  ? 'bg-[var(--accent-primary)] text-[var(--button-text)]'
+                  : 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]'
+              }`}
+            >
+              <p className="text-sm sm:text-base whitespace-pre-wrap">{msg.text}</p>
+            </div>
+          </div>
         ))}
         <div ref={messagesEndRef} />
+        {isLoading && messages[messages.length -1]?.sender === 'ai' && messages[messages.length -1]?.isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-[var(--bg-tertiary)] rounded-lg p-3">
+              <div className="flex space-x-2">
+                <div className="w-2 h-2 bg-[var(--accent-primary)] rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-[var(--accent-primary)] rounded-full animate-bounce delay-100"></div>
+                <div className="w-2 h-2 bg-[var(--accent-primary)] rounded-full animate-bounce delay-200"></div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {isLoading && messages[messages.length -1]?.sender === 'ai' && messages[messages.length -1]?.isLoading && (
-        <div className="px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-400 flex items-center animate-pulse">
-          <LoadingSpinner size="sm" />
-          <span className="ml-2">{character.name} is typing...</span>
-        </div>
-      )}
-
-      <div className="p-2 sm:p-4 bg-gray-700 shadow-up">
-        <div className="flex items-center bg-gray-600 rounded-lg p-1 transition-all duration-200 focus-within:ring-2 focus-within:ring-sky-500">
+      <div className="p-4 border-t border-[var(--border-color)] bg-[var(--bg-secondary)]">
+        <div className="flex items-center bg-[var(--bg-tertiary)] rounded-lg p-1 transition-all duration-200 focus-within:ring-2 focus-within:ring-[var(--input-focus)]">
           {browserSupportsSpeechRecognition && (
             <IconButton
-              icon={<i className={`fas fa-microphone ${isListening ? 'text-red-500 animate-pulse' : 'text-sky-400'} transition-colors duration-200`}></i>}
+              icon={<i className={`fas fa-microphone ${isListening ? 'text-[var(--error-color)] animate-pulse' : 'text-[var(--text-primary)]'} transition-colors duration-200`}></i>}
               onClick={toggleListening}
               disabled={isLoading || !browserSupportsSpeechRecognition}
-              className="p-2 sm:p-3 hover:bg-gray-500 rounded-full transition-all duration-200"
+              className="p-2 sm:p-3 hover:bg-[var(--bg-tertiary)] rounded-full transition-all duration-200 hover-lift"
               ariaLabel={isListening ? "Stop Listening" : "Start Listening"}
             />
           )}
@@ -244,14 +261,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
             onChange={(e) => setInputText(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (handleSendMessage(), e.preventDefault())}
             placeholder={isListening ? "Listening..." : `Message ${character.name}...`}
-            className="flex-grow bg-transparent p-2 sm:p-3 text-sm sm:text-base text-gray-100 focus:outline-none placeholder-gray-400 transition-colors duration-200"
+            className="flex-grow bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg py-2 px-3 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus)]"
             disabled={isLoading || isListening}
           />
           <IconButton
-            icon={<i className="fas fa-paper-plane text-sky-400 transition-colors duration-200"></i>}
+            icon={<i className="fas fa-paper-plane text-[var(--button-text)] hover:text-[var(--button-hover)] transition-colors duration-200"></i>}
             onClick={handleSendMessage}
-            disabled={isLoading || !inputText.trim()}
-            className="p-2 sm:p-3 hover:bg-gray-500 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading || !inputText.trim() || isListening}
+            className={`p-2 sm:p-3 hover:bg-[var(--bg-tertiary)] rounded-full transition-all duration-200 hover-lift disabled:opacity-50 disabled:cursor-not-allowed ${
+              isLoading || !inputText.trim() || isListening
+                ? 'bg-[var(--button-disabled)] text-[var(--text-tertiary)]'
+                : 'bg-[var(--button-primary)] hover:bg-[var(--button-hover)] text-[var(--button-text)]'
+            }`}
             ariaLabel="Send message"
           />
         </div>
