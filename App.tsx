@@ -175,7 +175,7 @@ const App: React.FC = () => {
         {renderView()}
       </div>
       <footer className="text-center mt-2 sm:mt-4 text-xs text-[var(--text-tertiary)] px-2">
-        <p>AI Character Chat Simulator. Powered by Oswaldinho the Great.</p>
+        <p>PersonaX - AI Character Chat Simulator. Powered by Oswaldinho the Great.</p>
         <p className="hidden sm:block">Ensure your Gemini API Key is configured in your environment (process.env.API_KEY).</p>
       </footer>
     </div>
