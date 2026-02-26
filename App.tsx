@@ -4,6 +4,8 @@ import { PREDEFINED_CHARACTERS, LOCAL_STORAGE_CHARACTERS_KEY } from './constants
 import CharacterSelector from './components/CharacterSelector';
 import CharacterCreator from './components/CharacterCreator';
 import ChatWindow from './components/ChatWindow';
+import LandingPage from './components/LandingPage';
+import AuthForms from './components/AuthForms';
 import ThemeToggle from './components/ThemeToggle';
 import { v4 as uuidv4 } from 'uuid';
 import './styles/themes.css';
@@ -11,7 +13,8 @@ import './styles/themes.css';
 const THEME_STORAGE_KEY = 'aiCharacterChat_theme';
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<AppView>(AppView.CharacterSelection);
+  const [currentView, setCurrentView] = useState<AppView>(AppView.Landing);
+  const [user, setUser] = useState<any>(null);
   const [characters, setCharacters] = useState<Character[]>(() => {
     const savedCharacters = localStorage.getItem(LOCAL_STORAGE_CHARACTERS_KEY);
     const customCharacters = savedCharacters ? JSON.parse(savedCharacters) : [];
@@ -56,8 +59,8 @@ const App: React.FC = () => {
   const handleSaveCharacter = useCallback((characterData: Omit<Character, 'id' | 'isPredefined'>) => {
     if (characterToEdit) {
       // Update existing character
-      setCharacters(prev => prev.map(c => 
-        c.id === characterToEdit.id 
+      setCharacters(prev => prev.map(c =>
+        c.id === characterToEdit.id
           ? { ...c, ...characterData }
           : c
       ));
@@ -83,7 +86,7 @@ const App: React.FC = () => {
     setCharacterToEdit(null);
     setCurrentView(AppView.CharacterSelection);
   }, []);
-  
+
   const handleDeleteCharacter = useCallback((characterId: string) => {
     setCharacters(prev => prev.filter(c => c.id !== characterId));
     if (selectedCharacter?.id === characterId) {
@@ -93,8 +96,8 @@ const App: React.FC = () => {
   }, [selectedCharacter]);
 
   const handleToggleFavorite = useCallback((characterId: string) => {
-    setCharacters(prev => prev.map(c => 
-      c.id === characterId 
+    setCharacters(prev => prev.map(c =>
+      c.id === characterId
         ? { ...c, isFavorite: !c.isFavorite }
         : c
     ));
@@ -106,8 +109,8 @@ const App: React.FC = () => {
 
   const filteredCharacters = characters.filter(character => {
     const matchesSearch = character.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         character.bio.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         character.categories.some(cat => cat.toLowerCase().includes(searchQuery.toLowerCase()));
+      character.bio.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      character.categories.some(cat => cat.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCategory = !selectedCategory || character.categories.includes(selectedCategory);
     const matchesFavorites = !showFavoritesOnly || character.isFavorite;
     return matchesSearch && matchesCategory && matchesFavorites;
@@ -126,10 +129,41 @@ const App: React.FC = () => {
 
   const renderView = () => {
     switch (currentView) {
+      case AppView.Landing:
+        return (
+          <LandingPage
+            onGetStarted={() => setCurrentView(AppView.Signup)}
+            onLogin={() => setCurrentView(AppView.Login)}
+          />
+        );
+      case AppView.Login:
+        return (
+          <AuthForms
+            type="login"
+            onBack={() => setCurrentView(AppView.Landing)}
+            onSwitch={() => setCurrentView(AppView.Signup)}
+            onSuccess={(data) => {
+              setUser(data.user);
+              setCurrentView(AppView.CharacterSelection);
+            }}
+          />
+        );
+      case AppView.Signup:
+        return (
+          <AuthForms
+            type="signup"
+            onBack={() => setCurrentView(AppView.Landing)}
+            onSwitch={() => setCurrentView(AppView.Login)}
+            onSuccess={(data) => {
+              setUser(data.user);
+              setCurrentView(AppView.CharacterSelection);
+            }}
+          />
+        );
       case AppView.CharacterCreation:
         return (
-          <CharacterCreator 
-            onSave={handleSaveCharacter} 
+          <CharacterCreator
+            onSave={handleSaveCharacter}
             onCancel={handleBackToSelection}
             initialData={characterToEdit || undefined}
           />
@@ -139,12 +173,12 @@ const App: React.FC = () => {
           return <ChatWindow character={selectedCharacter} onBack={handleBackToSelection} />;
         }
         // Fallback if somehow in chat view without a character
-        setCurrentView(AppView.CharacterSelection); 
+        setCurrentView(AppView.CharacterSelection);
         return null;
       case AppView.CharacterSelection:
       default:
         return (
-          <CharacterSelector 
+          <CharacterSelector
             characters={sortedCharacters}
             onSelectCharacter={handleSelectCharacter}
             onCreateCharacter={handleCreateCharacter}
@@ -175,7 +209,7 @@ const App: React.FC = () => {
         {renderView()}
       </div>
       <footer className="text-center mt-2 sm:mt-4 text-xs text-[var(--text-tertiary)] px-2">
-        <p>PersonaX - AI Character Chat Simulator. Powered by Oswaldinho the Great.</p>
+        <p>Minimind - AI Character Chat Simulator. Powered by Oswaldinho the Great.</p>
         <p className="hidden sm:block">Ensure your Gemini API Key is configured in your environment (process.env.API_KEY).</p>
       </footer>
     </div>

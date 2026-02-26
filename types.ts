@@ -26,6 +26,9 @@ export interface Character {
 }
 
 export enum AppView {
+  Landing = 'landing',
+  Login = 'login',
+  Signup = 'signup',
   CharacterSelection = 'characterSelection',
   CharacterCreation = 'characterCreation',
   Chat = 'chat'
