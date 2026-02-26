@@ -1,30 +1,28 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Character, ChatMessage } from '../types';
-import { GEMINI_MODEL_NAME, LOCAL_STORAGE_CHAT_HISTORY_KEY_PREFIX } from '../constants';
-import { GoogleGenAI, Chat, GenerateContentResponse } from '@google/genai';
+import { GEMINI_MODEL_NAME } from '../constants';
+import { GoogleGenAI, Chat } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
-import MessageBubble from './MessageBubble';
 import IconButton from './IconButton';
-import LoadingSpinner from './LoadingSpinner';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
+import { supabase } from '../services/supabaseClient';
 import '../styles/animations.css';
 
 interface ChatWindowProps {
   character: Character;
   onBack: () => void;
+  user: any;
 }
 
-// Assume process.env.API_KEY is available in the environment
-const API_KEY = process.env.API_KEY;
+// Ensure VITE_ prefix for Vite environment variables
+const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY || (import.meta as any).env.GEMINI_API_KEY;
 let ai: GoogleGenAI | null = null;
 if (API_KEY) {
   ai = new GoogleGenAI({ apiKey: API_KEY });
-} else {
-  console.warn("API_KEY environment variable not set. Gemini API will not function.");
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,23 +31,41 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
 
   const [isTTSEnabled, setIsTTSEnabled] = useState(false);
   const { speak, stopSpeaking, isSpeaking, availableVoices } = useTextToSpeech();
-  
+
   const handleSpeechResult = useCallback((transcript: string) => {
     setInputText(prev => prev + transcript);
   }, []);
 
   const { isListening, startListening, stopListening, browserSupportsSpeechRecognition } = useSpeechRecognition({ onResult: handleSpeechResult });
 
-  const chatHistoryKey = `${LOCAL_STORAGE_CHAT_HISTORY_KEY_PREFIX}${character.id}`;
+  const fetchMessages = useCallback(async () => {
+    if (!user || !character.id) return;
+
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('character_id', character.id)
+      .eq('user_id', user.id)
+      .order('timestamp', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching messages:', error);
+      return;
+    }
+
+    if (data) {
+      setMessages(data.map((m: any) => ({
+        id: m.id,
+        text: m.text,
+        sender: m.sender,
+        timestamp: m.timestamp,
+        isLoading: m.is_loading
+      })));
+    }
+  }, [user, character.id]);
 
   useEffect(() => {
-    // Load chat history from localStorage
-    const savedHistory = localStorage.getItem(chatHistoryKey);
-    if (savedHistory) {
-      setMessages(JSON.parse(savedHistory));
-    } else {
-      setMessages([]); // Start fresh if no history
-    }
+    fetchMessages();
 
     // Initialize Gemini Chat session
     if (ai) {
@@ -58,34 +74,24 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
         config: {
           systemInstruction: character.personalityPrompt,
         },
-        // history: savedHistory ? JSON.parse(savedHistory).map(msg => ({ // TODO: Map to Gemini history format
-        //   role: msg.sender === 'user' ? 'user' : 'model',
-        //   parts: [{text: msg.text}]
-        // })) : [] // This mapping might be complex; starting fresh chat session for now
       });
       setGeminiChat(chatInstance);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [character, chatHistoryKey]); // Re-init on character change
+  }, [character, fetchMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    // Save chat history to localStorage
-    if (messages.length > 0) {
-      localStorage.setItem(chatHistoryKey, JSON.stringify(messages.filter(m => !m.isLoading)));
-    }
-  }, [messages, chatHistoryKey]);
+  }, [messages]);
 
   const handleSendMessage = useCallback(async () => {
-    if (!inputText.trim() || isLoading || !geminiChat) return;
+    if (!inputText.trim() || isLoading || !geminiChat || !user) return;
 
-    const userMessage: ChatMessage = {
-      id: uuidv4(),
-      text: inputText,
-      sender: 'user',
-      timestamp: Date.now(),
-    };
-    setMessages(prev => [...prev, userMessage]);
+    const userMessageText = inputText;
+    const timestamp = Date.now();
+
+    // 1. Optimistic update (UI)
+    const tempUserMsgId = uuidv4();
+    setMessages(prev => [...prev, { id: tempUserMsgId, text: userMessageText, sender: 'user', timestamp }]);
     setInputText('');
     setIsLoading(true);
 
@@ -93,43 +99,74 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
     setMessages(prev => [...prev, { id: aiMessageId, text: '', sender: 'ai', timestamp: Date.now(), isLoading: true }]);
 
     try {
-      const stream = await geminiChat.sendMessageStream({ message: userMessage.text });
+      // 2. Save user message to Supabase
+      await supabase.from('messages').insert({
+        character_id: character.id,
+        user_id: user.id,
+        text: userMessageText,
+        sender: 'user',
+        timestamp
+      });
+
+      // 3. Get AI Response
+      const stream = await geminiChat.sendMessageStream({ message: userMessageText });
       let fullText = "";
       for await (const chunk of stream) {
         const chunkText = chunk.text;
         if (chunkText) {
           fullText += chunkText;
-          setMessages(prev =>
-            prev.map(msg =>
+          setMessages((prev: ChatMessage[]) =>
+            prev.map((msg: ChatMessage) =>
               msg.id === aiMessageId ? { ...msg, text: fullText, isLoading: true } : msg
             )
           );
         }
       }
-      setMessages(prev =>
-        prev.map(msg =>
+
+      // 4. Update UI and Save AI message to Supabase
+      setMessages((prev: ChatMessage[]) =>
+        prev.map((msg: ChatMessage) =>
           msg.id === aiMessageId ? { ...msg, text: fullText, isLoading: false } : msg
         )
       );
+
+      await supabase.from('messages').insert({
+        character_id: character.id,
+        user_id: user.id,
+        text: fullText,
+        sender: 'ai',
+        timestamp: Date.now()
+      });
+
       if (isTTSEnabled && fullText) {
         speak(fullText, character.voiceSettings);
       }
     } catch (error) {
-      console.error('Error sending message to Gemini:', error);
-      setMessages(prev =>
-        prev.map(msg =>
+      console.error('Error in chat flow:', error);
+      setMessages((prev: ChatMessage[]) =>
+        prev.map((msg: ChatMessage) =>
           msg.id === aiMessageId ? { ...msg, text: 'Sorry, I encountered an error. Please try again.', isLoading: false, sender: 'ai' } : msg
         )
       );
     } finally {
       setIsLoading(false);
     }
-  }, [inputText, isLoading, geminiChat, character.personalityPrompt, isTTSEnabled, speak, character.voiceSettings]);
+  }, [inputText, isLoading, geminiChat, character, user, isTTSEnabled, speak]);
 
-  const handleClearHistory = () => {
-    if (window.confirm("Are you sure you want to clear the chat history for this character?")) {
+  const handleClearHistory = async () => {
+    if (window.confirm("Are you sure you want to clear the chat history for this character?") && user) {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('character_id', character.id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error clearing history:', error);
+        return;
+      }
+
       setMessages([]);
-      localStorage.removeItem(chatHistoryKey);
       // Re-initialize Gemini Chat session for a fresh start without history
       if (ai) {
         const chatInstance = ai.chats.create({
@@ -145,7 +182,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
     if (isSpeaking) stopSpeaking();
     setIsTTSEnabled(prev => !prev);
   };
-  
+
   const toggleListening = () => {
     if (isListening) {
       stopListening();
@@ -173,9 +210,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
       <header className="p-4 border-b border-[var(--border-color)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <IconButton 
-              icon={<i className="fas fa-arrow-left text-[var(--text-primary)] hover:text-[var(--text-hover)]"></i>} 
-              onClick={onBack} 
+            <IconButton
+              icon={<i className="fas fa-arrow-left text-[var(--text-primary)] hover:text-[var(--text-hover)]"></i>}
+              onClick={onBack}
               className="mr-2 sm:mr-3 text-[var(--text-primary)] hover:text-[var(--text-hover)] transition-colors duration-200 hover-lift"
               ariaLabel="Back to character selection"
             />
@@ -198,8 +235,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
                   <div className="absolute right-0 mt-2 w-48 bg-[var(--bg-tertiary)] rounded-lg shadow-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 hidden sm:block animate-scale-in">
                     <p className="text-xs text-[var(--text-tertiary)] mb-1">Voice Settings:</p>
                     <p className="text-xs text-[var(--text-tertiary)]">
-                      {character.voiceSettings?.voiceName || 'Default Voice'}<br/>
-                      Pitch: {character.voiceSettings?.pitch || 1}<br/>
+                      {character.voiceSettings?.voiceName || 'Default Voice'}<br />
+                      Pitch: {character.voiceSettings?.pitch || 1}<br />
                       Rate: {character.voiceSettings?.rate || 1}
                     </p>
                   </div>
@@ -220,18 +257,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
         {messages.map((msg, index) => (
           <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-[80%] rounded-lg p-3 ${
-                msg.sender === 'user'
-                  ? 'bg-[var(--accent-primary)] text-[var(--button-text)]'
-                  : 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]'
-              }`}
+              className={`max-w-[80%] rounded-lg p-3 ${msg.sender === 'user'
+                ? 'bg-[var(--accent-primary)] text-[var(--button-text)]'
+                : 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]'
+                }`}
             >
               <p className="text-sm sm:text-base whitespace-pre-wrap">{msg.text}</p>
             </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
-        {isLoading && messages[messages.length -1]?.sender === 'ai' && messages[messages.length -1]?.isLoading && (
+        {isLoading && messages[messages.length - 1]?.sender === 'ai' && messages[messages.length - 1]?.isLoading && (
           <div className="flex justify-start">
             <div className="bg-[var(--bg-tertiary)] rounded-lg p-3">
               <div className="flex space-x-2">
@@ -268,11 +304,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack }) => {
             icon={<i className="fas fa-paper-plane text-[var(--button-text)] hover:text-[var(--button-hover)] transition-colors duration-200"></i>}
             onClick={handleSendMessage}
             disabled={isLoading || !inputText.trim() || isListening}
-            className={`p-2 sm:p-3 hover:bg-[var(--bg-tertiary)] rounded-full transition-all duration-200 hover-lift disabled:opacity-50 disabled:cursor-not-allowed ${
-              isLoading || !inputText.trim() || isListening
-                ? 'bg-[var(--button-disabled)] text-[var(--text-tertiary)]'
-                : 'bg-[var(--button-primary)] hover:bg-[var(--button-hover)] text-[var(--button-text)]'
-            }`}
+            className={`p-2 sm:p-3 hover:bg-[var(--bg-tertiary)] rounded-full transition-all duration-200 hover-lift disabled:opacity-50 disabled:cursor-not-allowed ${isLoading || !inputText.trim() || isListening
+              ? 'bg-[var(--button-disabled)] text-[var(--text-tertiary)]'
+              : 'bg-[var(--button-primary)] hover:bg-[var(--button-hover)] text-[var(--button-text)]'
+              }`}
             ariaLabel="Send message"
           />
         </div>

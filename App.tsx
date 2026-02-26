@@ -7,6 +7,7 @@ import ChatWindow from './components/ChatWindow';
 import LandingPage from './components/LandingPage';
 import AuthForms from './components/AuthForms';
 import ThemeToggle from './components/ThemeToggle';
+import { supabase } from './services/supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
 import './styles/themes.css';
 
@@ -15,11 +16,29 @@ const THEME_STORAGE_KEY = 'aiCharacterChat_theme';
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.Landing);
   const [user, setUser] = useState<any>(null);
-  const [characters, setCharacters] = useState<Character[]>(() => {
-    const savedCharacters = localStorage.getItem(LOCAL_STORAGE_CHARACTERS_KEY);
-    const customCharacters = savedCharacters ? JSON.parse(savedCharacters) : [];
-    return [...PREDEFINED_CHARACTERS, ...customCharacters];
-  });
+
+  useEffect(() => {
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setUser(session.user);
+        setCurrentView(AppView.CharacterSelection);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
+      setUser(session?.user ?? null);
+      if (session) {
+        setCurrentView(AppView.CharacterSelection);
+      } else {
+        setCurrentView(AppView.Landing);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+  const [characters, setCharacters] = useState<Character[]>(PREDEFINED_CHARACTERS);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [characterToEdit, setCharacterToEdit] = useState<Character | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,10 +50,42 @@ const App: React.FC = () => {
     return (savedTheme as 'light' | 'dark') || 'dark';
   });
 
+  const fetchCharacters = useCallback(async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('characters')
+      .select('*')
+      .or(`user_id.eq.${user.id},is_predefined.eq.true`);
+
+    if (error) {
+      console.error('Error fetching characters:', error);
+      return;
+    }
+
+    if (data) {
+      const mappedCharacters: Character[] = data.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        avatar: c.avatar,
+        bio: c.bio,
+        personalityPrompt: c.personality_prompt,
+        isPredefined: c.is_predefined,
+        isFavorite: c.is_favorite,
+        categories: c.categories,
+        voiceSettings: c.voice_settings
+      }));
+      setCharacters(mappedCharacters);
+    }
+  }, [user]);
+
   useEffect(() => {
-    const customCharacters = characters.filter(c => !c.isPredefined);
-    localStorage.setItem(LOCAL_STORAGE_CHARACTERS_KEY, JSON.stringify(customCharacters));
-  }, [characters]);
+    if (user) {
+      fetchCharacters();
+    } else {
+      setCharacters(PREDEFINED_CHARACTERS);
+    }
+  }, [user, fetchCharacters]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -52,34 +103,53 @@ const App: React.FC = () => {
   }, []);
 
   const handleEditCharacter = useCallback((character: Character) => {
+    if (character.isPredefined) return;
     setCharacterToEdit(character);
     setCurrentView(AppView.CharacterCreation);
   }, []);
 
-  const handleSaveCharacter = useCallback((characterData: Omit<Character, 'id' | 'isPredefined'>) => {
-    if (characterToEdit) {
-      // Update existing character
-      setCharacters(prev => prev.map(c =>
-        c.id === characterToEdit.id
-          ? { ...c, ...characterData }
-          : c
-      ));
-      if (selectedCharacter?.id === characterToEdit.id) {
-        setSelectedCharacter({ ...characterToEdit, ...characterData });
+  const handleSaveCharacter = useCallback(async (characterData: Omit<Character, 'id' | 'isPredefined'>) => {
+    if (!user) return;
+
+    try {
+      if (characterToEdit) {
+        const { error } = await supabase
+          .from('characters')
+          .update({
+            name: characterData.name,
+            avatar: characterData.avatar,
+            bio: characterData.bio,
+            personality_prompt: characterData.personalityPrompt,
+            categories: characterData.categories,
+            voice_settings: characterData.voiceSettings
+          })
+          .eq('id', characterToEdit.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('characters')
+          .insert({
+            user_id: user.id,
+            name: characterData.name,
+            avatar: characterData.avatar,
+            bio: characterData.bio,
+            personality_prompt: characterData.personalityPrompt,
+            categories: characterData.categories,
+            voice_settings: characterData.voiceSettings,
+            is_predefined: false
+          });
+
+        if (error) throw error;
       }
-    } else {
-      // Create new character
-      const newCharacter: Character = {
-        ...characterData,
-        id: uuidv4(),
-        isPredefined: false,
-      };
-      setCharacters(prev => [...prev, newCharacter]);
-      setSelectedCharacter(newCharacter);
+
+      await fetchCharacters();
+      setCurrentView(AppView.CharacterSelection);
+      setCharacterToEdit(null);
+    } catch (err) {
+      console.error('Error saving character:', err);
     }
-    setCharacterToEdit(null);
-    setCurrentView(AppView.Chat);
-  }, [characterToEdit, selectedCharacter]);
+  }, [characterToEdit, user, fetchCharacters]);
 
   const handleBackToSelection = useCallback(() => {
     setSelectedCharacter(null);
@@ -87,20 +157,49 @@ const App: React.FC = () => {
     setCurrentView(AppView.CharacterSelection);
   }, []);
 
-  const handleDeleteCharacter = useCallback((characterId: string) => {
-    setCharacters(prev => prev.filter(c => c.id !== characterId));
+  const handleDeleteCharacter = useCallback(async (characterId: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('characters')
+      .delete()
+      .eq('id', characterId)
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error deleting character:', error);
+      return;
+    }
+
+    await fetchCharacters();
     if (selectedCharacter?.id === characterId) {
       setSelectedCharacter(null);
       setCurrentView(AppView.CharacterSelection);
     }
-  }, [selectedCharacter]);
+  }, [selectedCharacter, user, fetchCharacters]);
 
-  const handleToggleFavorite = useCallback((characterId: string) => {
-    setCharacters(prev => prev.map(c =>
-      c.id === characterId
-        ? { ...c, isFavorite: !c.isFavorite }
-        : c
-    ));
+  const handleToggleFavorite = useCallback(async (characterId: string) => {
+    const character = characters.find(c => c.id === characterId);
+    if (!character || character.isPredefined || !user) return;
+
+    const { error } = await supabase
+      .from('characters')
+      .update({ is_favorite: !character.isFavorite })
+      .eq('id', characterId)
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error toggling favorite:', error);
+      return;
+    }
+
+    await fetchCharacters();
+  }, [characters, user, fetchCharacters]);
+
+  const handleLogout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setCurrentView(AppView.Landing);
   }, []);
 
   const toggleTheme = useCallback(() => {
@@ -170,7 +269,7 @@ const App: React.FC = () => {
         );
       case AppView.Chat:
         if (selectedCharacter) {
-          return <ChatWindow character={selectedCharacter} onBack={handleBackToSelection} />;
+          return <ChatWindow character={selectedCharacter} onBack={handleBackToSelection} user={user} />;
         }
         // Fallback if somehow in chat view without a character
         setCurrentView(AppView.CharacterSelection);
@@ -202,7 +301,14 @@ const App: React.FC = () => {
     <div className={`min-h-screen w-full flex flex-col items-center justify-center p-2 sm:p-6 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)]`}>
       <div className="w-full max-w-6xl bg-[var(--bg-secondary)] shadow-2xl rounded-2xl overflow-hidden h-[calc(100vh-1rem)] sm:h-[calc(100vh-4rem)] flex flex-col relative">
         {currentView === AppView.CharacterSelection && (
-          <div className="absolute top-2 right-2 z-10">
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+            <button
+              onClick={handleLogout}
+              className="p-2 text-[var(--text-tertiary)] hover:text-[var(--error-color)] transition-colors"
+              title="Logout"
+            >
+              <i className="fas fa-sign-out-alt"></i>
+            </button>
             <ThemeToggle currentTheme={theme} onToggle={toggleTheme} />
           </div>
         )}

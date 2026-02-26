@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../services/supabaseClient';
 
 interface AuthFormsProps {
     type: 'login' | 'signup';
@@ -20,25 +21,31 @@ const AuthForms: React.FC<AuthFormsProps> = ({ type, onSwitch, onSuccess, onBack
         setIsLoading(true);
 
         try {
-            const endpoint = type === 'login' ? '/api/auth/login' : '/api/auth/signup';
-            // In a real scenario, this would be your backend URL (Vercel or Render)
-            const baseUrl = 'https://minimind-backend.vercel.app'; // Placeholder, should be env var or relative
-
-            const response = await fetch(`${baseUrl}${endpoint}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(type === 'login' ? { email, password } : { email, password, name }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Authentication failed');
+            let result;
+            if (type === 'signup') {
+                result = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            full_name: name,
+                        },
+                    },
+                });
+            } else {
+                result = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
             }
 
-            onSuccess(data);
+            if (result.error) throw result.error;
+
+            if (result.data.user) {
+                onSuccess(result.data);
+            }
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Authentication failed');
         } finally {
             setIsLoading(false);
         }
