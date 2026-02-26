@@ -1,19 +1,20 @@
+"use client";
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { Character, AppView } from './types';
-import { PREDEFINED_CHARACTERS, LOCAL_STORAGE_CHARACTERS_KEY } from './constants';
-import CharacterSelector from './components/CharacterSelector';
-import CharacterCreator from './components/CharacterCreator';
-import ChatWindow from './components/ChatWindow';
-import LandingPage from './components/LandingPage';
-import AuthForms from './components/AuthForms';
-import ThemeToggle from './components/ThemeToggle';
-import { supabase } from './services/supabaseClient';
+import { Character, AppView } from '../types';
+import { PREDEFINED_CHARACTERS, LOCAL_STORAGE_CHARACTERS_KEY } from '../constants';
+import CharacterSelector from '../components/CharacterSelector';
+import CharacterCreator from '../components/CharacterCreator';
+import ChatWindow from '../components/ChatWindow';
+import LandingPage from '../components/LandingPage';
+import AuthForms from '../components/AuthForms';
+import ThemeToggle from '../components/ThemeToggle';
+import { supabase } from '../services/supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
-import './styles/themes.css';
 
 const THEME_STORAGE_KEY = 'aiCharacterChat_theme';
 
-const App: React.FC = () => {
+const Page: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.Landing);
   const [user, setUser] = useState<any>(null);
 
@@ -322,4 +323,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+export default Page;

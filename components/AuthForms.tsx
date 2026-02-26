@@ -51,6 +51,23 @@ const AuthForms: React.FC<AuthFormsProps> = ({ type, onSwitch, onSuccess, onBack
         }
     };
 
+    const handleGoogleLogin = async () => {
+        setError('');
+        setIsLoading(true);
+        try {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin
+                }
+            });
+            if (error) throw error;
+        } catch (err: any) {
+            setError(err.message || 'Google login failed');
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="flex flex-col h-full bg-[var(--bg-primary)] p-6 sm:p-10">
             <button onClick={onBack} className="self-start text-[var(--text-tertiary)] hover:text-[var(--text-primary)] mb-8 transition-colors">
@@ -67,7 +84,24 @@ const AuthForms: React.FC<AuthFormsProps> = ({ type, onSwitch, onSuccess, onBack
                     </p>
                 </div>
 
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                <div className="space-y-4">
+                    <button
+                        onClick={handleGoogleLogin}
+                        disabled={isLoading}
+                        className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-[var(--border-color)] rounded-xl shadow-sm text-sm font-bold text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] focus:outline-none transition-all disabled:opacity-50"
+                    >
+                        <i className="fab fa-google text-red-500"></i>
+                        Continue with Google
+                    </button>
+
+                    <div className="relative flex items-center py-2">
+                        <div className="flex-grow border-t border-[var(--border-color)]"></div>
+                        <span className="flex-shrink mx-4 text-xs text-[var(--text-tertiary)] font-medium uppercase tracking-wider">Or with email</span>
+                        <div className="flex-grow border-t border-[var(--border-color)]"></div>
+                    </div>
+                </div>
+
+                <form className="mt-2 space-y-6" onSubmit={handleSubmit}>
                     {error && (
                         <div className="bg-red-500/10 border border-red-500/50 text-red-500 px-4 py-3 rounded-lg text-sm animate-shake">
                             {error}

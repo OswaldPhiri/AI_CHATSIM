@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Character, ChatMessage } from '../types';
-import { GEMINI_MODEL_NAME } from '../constants';
-import { GoogleGenAI, Chat } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
 import IconButton from './IconButton';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
@@ -15,18 +13,10 @@ interface ChatWindowProps {
   user: any;
 }
 
-// Ensure VITE_ prefix for Vite environment variables
-const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY || (import.meta as any).env.GEMINI_API_KEY;
-let ai: GoogleGenAI | null = null;
-if (API_KEY) {
-  ai = new GoogleGenAI({ apiKey: API_KEY });
-}
-
 const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [geminiChat, setGeminiChat] = useState<Chat | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [isTTSEnabled, setIsTTSEnabled] = useState(false);
@@ -66,17 +56,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
 
   useEffect(() => {
     fetchMessages();
-
-    // Initialize Gemini Chat session
-    if (ai) {
-      const chatInstance = ai.chats.create({
-        model: GEMINI_MODEL_NAME,
-        config: {
-          systemInstruction: character.personalityPrompt,
-        },
-      });
-      setGeminiChat(chatInstance);
-    }
   }, [character, fetchMessages]);
 
   useEffect(() => {
@@ -84,62 +63,52 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
   }, [messages]);
 
   const handleSendMessage = useCallback(async () => {
-    if (!inputText.trim() || isLoading || !geminiChat || !user) return;
+    if (!inputText.trim() || isLoading || !user) return;
 
     const userMessageText = inputText;
     const timestamp = Date.now();
+    const conversationId = character.id; // Simulating conversation ID with character ID for now
 
     // 1. Optimistic update (UI)
     const tempUserMsgId = uuidv4();
-    setMessages(prev => [...prev, { id: tempUserMsgId, text: userMessageText, sender: 'user', timestamp }]);
+    setMessages((prev: ChatMessage[]) => [...prev, { id: tempUserMsgId, text: userMessageText, sender: 'user', timestamp }]);
     setInputText('');
     setIsLoading(true);
 
     const aiMessageId = uuidv4();
-    setMessages(prev => [...prev, { id: aiMessageId, text: '', sender: 'ai', timestamp: Date.now(), isLoading: true }]);
+    setMessages((prev: ChatMessage[]) => [...prev, { id: aiMessageId, text: '', sender: 'ai', timestamp: Date.now(), isLoading: true }]);
 
     try {
-      // 2. Save user message to Supabase
-      await supabase.from('messages').insert({
-        character_id: character.id,
-        user_id: user.id,
-        text: userMessageText,
-        sender: 'user',
-        timestamp
+      // 2. Call Serverless API
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          message: userMessageText,
+          characterId: character.id,
+          conversationId: conversationId
+        })
       });
 
-      // 3. Get AI Response
-      const stream = await geminiChat.sendMessageStream({ message: userMessageText });
-      let fullText = "";
-      for await (const chunk of stream) {
-        const chunkText = chunk.text;
-        if (chunkText) {
-          fullText += chunkText;
-          setMessages((prev: ChatMessage[]) =>
-            prev.map((msg: ChatMessage) =>
-              msg.id === aiMessageId ? { ...msg, text: fullText, isLoading: true } : msg
-            )
-          );
-        }
+      if (!response.ok) {
+        throw new Error('Failed to get response from AI');
       }
 
-      // 4. Update UI and Save AI message to Supabase
+      const { reply } = await response.json();
+
+      // 3. Update UI
       setMessages((prev: ChatMessage[]) =>
         prev.map((msg: ChatMessage) =>
-          msg.id === aiMessageId ? { ...msg, text: fullText, isLoading: false } : msg
+          msg.id === aiMessageId ? { ...msg, text: reply, isLoading: false } : msg
         )
       );
 
-      await supabase.from('messages').insert({
-        character_id: character.id,
-        user_id: user.id,
-        text: fullText,
-        sender: 'ai',
-        timestamp: Date.now()
-      });
-
-      if (isTTSEnabled && fullText) {
-        speak(fullText, character.voiceSettings);
+      if (isTTSEnabled && reply) {
+        speak(reply, character.voiceSettings);
       }
     } catch (error) {
       console.error('Error in chat flow:', error);
@@ -151,7 +120,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [inputText, isLoading, geminiChat, character, user, isTTSEnabled, speak]);
+  }, [inputText, isLoading, character, user, isTTSEnabled, speak]);
 
   const handleClearHistory = async () => {
     if (window.confirm("Are you sure you want to clear the chat history for this character?") && user) {
@@ -167,14 +136,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
       }
 
       setMessages([]);
-      // Re-initialize Gemini Chat session for a fresh start without history
-      if (ai) {
-        const chatInstance = ai.chats.create({
-          model: GEMINI_MODEL_NAME,
-          config: { systemInstruction: character.personalityPrompt },
-        });
-        setGeminiChat(chatInstance);
-      }
     }
   };
 
@@ -190,20 +151,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
       startListening();
     }
   };
-
-  if (!API_KEY) {
-    return (
-      <div className="p-6 flex flex-col h-full items-center justify-center text-center">
-        <h2 className="text-xl font-semibold text-red-400 mb-4">API Key Missing</h2>
-        <p className="text-gray-300">The Gemini API Key (process.env.API_KEY) is not configured.</p>
-        <p className="text-gray-400 text-sm">Please ensure it's set in your environment to use the chat features.</p>
-        <button onClick={onBack} className="mt-6 bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-lg">
-          Back to Character Selection
-        </button>
-      </div>
-    );
-  }
-
 
   return (
     <div className="flex flex-col h-full bg-[var(--bg-primary)]">
