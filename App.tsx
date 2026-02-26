@@ -199,8 +199,8 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)]`}>
-      <div className="w-full max-w-2xl bg-[var(--bg-secondary)] shadow-2xl rounded-lg overflow-hidden h-[calc(100vh-1rem)] sm:h-[calc(100vh-4rem)] max-h-[800px] sm:max-h-[700px] relative">
+    <div className={`min-h-screen w-full flex flex-col items-center justify-center p-2 sm:p-6 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)]`}>
+      <div className="w-full max-w-6xl bg-[var(--bg-secondary)] shadow-2xl rounded-2xl overflow-hidden h-[calc(100vh-1rem)] sm:h-[calc(100vh-4rem)] flex flex-col relative">
         {currentView === AppView.CharacterSelection && (
           <div className="absolute top-2 right-2 z-10">
             <ThemeToggle currentTheme={theme} onToggle={toggleTheme} />
