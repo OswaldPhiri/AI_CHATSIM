@@ -3,7 +3,8 @@ export interface ChatMessage {
   text: string;
   sender: 'user' | 'ai';
   timestamp: number;
-  isLoading?: boolean; // For AI messages being streamed
+  isLoading?: boolean;
+  avatar?: string;
 }
 
 export interface VoiceSettings {

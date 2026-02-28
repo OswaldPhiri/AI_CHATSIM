@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Character } from '../types';
 import { AVAILABLE_CATEGORIES } from '../constants';
 import IconButton from './IconButton';
-import '../styles/animations.css';
 
 interface CharacterSelectorProps {
   characters: Character[];
@@ -75,11 +74,10 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
             </select>
             <button
               onClick={onToggleFavoritesOnly}
-              className={`px-3 py-2 rounded-lg transition-colors duration-200 ${
-                showFavoritesOnly 
-                  ? 'bg-[var(--accent-primary)] text-white' 
-                  : 'bg-[var(--input-bg)] text-[var(--text-primary)] border border-[var(--input-border)]'
-              }`}
+              className={`px-3 py-2 rounded-lg transition-colors duration-200 ${showFavoritesOnly
+                ? 'bg-[var(--accent-primary)] text-white'
+                : 'bg-[var(--input-bg)] text-[var(--text-primary)] border border-[var(--input-border)]'
+                }`}
             >
               <i className="fas fa-star"></i>
             </button>
@@ -123,7 +121,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
                   <div className="flex items-center space-x-1">
                     <IconButton
                       icon={<i className={`fas fa-star ${character.isFavorite ? 'text-yellow-400' : 'text-[var(--text-tertiary)]'}`}></i>}
-                      onClick={(e) => {
+                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                         e.stopPropagation();
                         onToggleFavorite(character.id);
                       }}
@@ -134,7 +132,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
                       <>
                         <IconButton
                           icon={<i className="fas fa-edit text-[var(--accent-primary)]"></i>}
-                          onClick={(e) => {
+                          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                             e.stopPropagation();
                             onEditCharacter(character);
                           }}
@@ -143,7 +141,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
                         />
                         <IconButton
                           icon={<i className="fas fa-trash-alt text-[var(--error-color)]"></i>}
-                          onClick={(e) => {
+                          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                             e.stopPropagation();
                             if (window.confirm(`Are you sure you want to delete ${character.name}?`)) {
                               onDeleteCharacter(character.id);

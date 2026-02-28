@@ -387,7 +387,7 @@ export const PREDEFINED_CHARACTERS: Character[] = [
   }
 ];
 
-export const GEMINI_MODEL_NAME = 'gemini-2.5-flash';
+export const GEMINI_MODEL_NAME = 'gemini-1.5-flash';
 
 export const LOCAL_STORAGE_CHARACTERS_KEY = 'aiCharacterChat_customCharacters';
 export const LOCAL_STORAGE_CHAT_HISTORY_KEY_PREFIX = 'aiCharacterChat_history_';

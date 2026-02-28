@@ -1,8 +1,5 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import '../styles/index.css';
-import '../styles/themes.css';
-import '../styles/animations.css';
 
 export const metadata: Metadata = {
     title: 'Minimind - AI Character Chat',

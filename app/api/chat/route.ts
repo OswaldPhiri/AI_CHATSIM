@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase Admin (or Service Role) for server-side persistence
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
-
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
     try {
         const { message, characterId, conversationId } = await req.json();
 
@@ -48,7 +47,7 @@ export async function POST(req: Request) {
     `;
 
         // 4. Call Gemini
-        const model = (genAI as any).getGenerativeModel({
+        const model = genAI.getGenerativeModel({
             model: "gemini-1.5-flash",
         });
 

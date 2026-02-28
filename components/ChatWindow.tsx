@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Character, ChatMessage } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+import MessageBubble from '../components/MessageBubble';
 import IconButton from './IconButton';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { supabase } from '../services/supabaseClient';
-import '../styles/animations.css';
 
 interface ChatWindowProps {
   character: Character;
@@ -49,7 +48,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
         text: m.text,
         sender: m.sender,
         timestamp: m.timestamp,
-        isLoading: m.is_loading
+        isLoading: m.is_loading,
+        avatar: m.sender === 'ai' ? character.avatar : undefined
       })));
     }
   }, [user, character.id]);
@@ -70,13 +70,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
     const conversationId = character.id; // Simulating conversation ID with character ID for now
 
     // 1. Optimistic update (UI)
-    const tempUserMsgId = uuidv4();
+    const tempUserMsgId = crypto.randomUUID();
     setMessages((prev: ChatMessage[]) => [...prev, { id: tempUserMsgId, text: userMessageText, sender: 'user', timestamp }]);
     setInputText('');
     setIsLoading(true);
 
-    const aiMessageId = uuidv4();
-    setMessages((prev: ChatMessage[]) => [...prev, { id: aiMessageId, text: '', sender: 'ai', timestamp: Date.now(), isLoading: true }]);
+    const aiMessageId = crypto.randomUUID();
+    setMessages((prev: ChatMessage[]) => [...prev, { id: aiMessageId, text: '', sender: 'ai', timestamp: Date.now(), isLoading: true, avatar: character.avatar }]);
 
     try {
       // 2. Call Serverless API
@@ -201,17 +201,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
       </header>
 
       <div className="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-[var(--bg-tertiary)] scrollbar-track-[var(--bg-secondary)]">
-        {messages.map((msg, index) => (
-          <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className={`max-w-[80%] rounded-lg p-3 ${msg.sender === 'user'
-                ? 'bg-[var(--accent-primary)] text-[var(--button-text)]'
-                : 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]'
-                }`}
-            >
-              <p className="text-sm sm:text-base whitespace-pre-wrap">{msg.text}</p>
-            </div>
-          </div>
+        {messages.map((msg) => (
+          <MessageBubble key={msg.id} message={msg} />
         ))}
         <div ref={messagesEndRef} />
         {isLoading && messages[messages.length - 1]?.sender === 'ai' && messages[messages.length - 1]?.isLoading && (
