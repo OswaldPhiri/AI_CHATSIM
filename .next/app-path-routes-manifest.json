@@ -1,1 +1,7 @@
-{"/_not-found/page":"/_not-found","/api/chat/route":"/api/chat","/icon.png/route":"/icon.png","/page":"/"}
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/chat/route": "/api/chat",
+  "/icon.png/route": "/icon.png",
+  "/page": "/"
+}

@@ -1,0 +1,3 @@
+module.exports=[33290,a=>{"use strict";var b=a.i(7997);function c({children:a}){return(0,b.jsxs)("html",{lang:"en",children:[(0,b.jsx)("head",{children:(0,b.jsx)("link",{rel:"stylesheet",href:"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"})}),(0,b.jsx)("body",{className:"bg-slate-900",children:a})]})}a.s(["default",()=>c,"metadata",0,{title:"Minimind - AI Character Chat",description:"Elevate your AI experience with Minimind."}])}];
+
+//# sourceMappingURL=app_layout_tsx_271801d7._.js.map
