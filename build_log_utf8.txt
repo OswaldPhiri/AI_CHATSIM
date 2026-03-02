@@ -1,0 +1,142 @@
+﻿
+> minimind@0.0.0 build
+> next build
+
+Ôû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+node.exe : 
+At C:\Program Files\nodejs\npm.ps1:29 char:3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+> Build error occurred
+Error: Turbopack build failed with 4 errors:
+./app/globals.css
+Error evaluating Node.js code
+Error: It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. 
+The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS 
+with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS 
+configuration.
+    [at at (C:\Users\allsw\OneDrive\Documents\GitHub\AI_CHATSIM\node_modules\tailwindcss
+\dist\lib.js:38:1643)]
+    at turbopack:///[turbopack-node]/transforms/postcss.ts:56:14 [C:\Users\allsw\OneDriv
+e\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__6d51cb5d._.js:165
+:20]
+    [at <anonymous>]
+    at Module.init (turbopack:///[turbopack-node]/transforms/postcss.ts:43:33) [C:\Users
+\allsw\OneDrive\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__6d5
+1cb5d._.js:155:35]
+    at run (turbopack:///[turbopack-node]/ipc/evaluate.ts:77:20) [C:\Users\allsw\OneDriv
+e\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__44695d76._.js:429
+:26]
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+
+
+./styles/animations.css
+Error evaluating Node.js code
+Error: It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. 
+The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS 
+with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS 
+configuration.
+    [at at (C:\Users\allsw\OneDrive\Documents\GitHub\AI_CHATSIM\node_modules\tailwindcss
+\dist\lib.js:38:1643)]
+    at turbopack:///[turbopack-node]/transforms/postcss.ts:56:14 [C:\Users\allsw\OneDriv
+e\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__6d51cb5d._.js:165
+:20]
+    [at <anonymous>]
+    at Module.init (turbopack:///[turbopack-node]/transforms/postcss.ts:43:33) [C:\Users
+\allsw\OneDrive\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__6d5
+1cb5d._.js:155:35]
+    at run (turbopack:///[turbopack-node]/ipc/evaluate.ts:77:20) [C:\Users\allsw\OneDriv
+e\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__44695d76._.js:429
+:26]
+
+Import trace:
+  Client Component Browser:
+    ./styles/animations.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+
+
+./styles/index.css
+Error evaluating Node.js code
+Error: It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. 
+The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS 
+with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS 
+configuration.
+    [at at (C:\Users\allsw\OneDrive\Documents\GitHub\AI_CHATSIM\node_modules\tailwindcss
+\dist\lib.js:38:1643)]
+    at turbopack:///[turbopack-node]/transforms/postcss.ts:56:14 [C:\Users\allsw\OneDriv
+e\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__6d51cb5d._.js:165
+:20]
+    [at <anonymous>]
+    at Module.init (turbopack:///[turbopack-node]/transforms/postcss.ts:43:33) [C:\Users
+\allsw\OneDrive\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__6d5
+1cb5d._.js:155:35]
+    at run (turbopack:///[turbopack-node]/ipc/evaluate.ts:77:20) [C:\Users\allsw\OneDriv
+e\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__44695d76._.js:429
+:26]
+
+Import trace:
+  Client Component Browser:
+    ./styles/index.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+
+
+./styles/themes.css
+Error evaluating Node.js code
+Error: It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. 
+The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS 
+with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS 
+configuration.
+    [at at (C:\Users\allsw\OneDrive\Documents\GitHub\AI_CHATSIM\node_modules\tailwindcss
+\dist\lib.js:38:1643)]
+    at turbopack:///[turbopack-node]/transforms/postcss.ts:56:14 [C:\Users\allsw\OneDriv
+e\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__6d51cb5d._.js:165
+:20]
+    [at <anonymous>]
+    at Module.init (turbopack:///[turbopack-node]/transforms/postcss.ts:43:33) [C:\Users
+\allsw\OneDrive\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__6d5
+1cb5d._.js:155:35]
+    at run (turbopack:///[turbopack-node]/ipc/evaluate.ts:77:20) [C:\Users\allsw\OneDriv
+e\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__44695d76._.js:429
+:26]
+
+Import trace:
+  Client Component Browser:
+    ./styles/themes.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+
+
+    at Module.init (turbopack:///[turbopack-node]/transforms/postcss.ts:43:33) [C:\Users
+\allsw\OneDrive\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__6d5
+1cb5d._.js:155:35])
+    at run (turbopack:///[turbopack-node]/ipc/evaluate.ts:77:20) [C:\Users\allsw\OneDriv
+e\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__44695d76._.js:429
+:26])
+    at Module.init (turbopack:///[turbopack-node]/transforms/postcss.ts:43:33) [C:\Users
+\allsw\OneDrive\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__6d5
+1cb5d._.js:155:35])
+    at run (turbopack:///[turbopack-node]/ipc/evaluate.ts:77:20) [C:\Users\allsw\OneDriv
+e\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__44695d76._.js:429
+:26])
+    at Module.init (turbopack:///[turbopack-node]/transforms/postcss.ts:43:33) [C:\Users
+\allsw\OneDrive\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__6d5
+1cb5d._.js:155:35])
+    at run (turbopack:///[turbopack-node]/ipc/evaluate.ts:77:20) [C:\Users\allsw\OneDriv
+e\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__44695d76._.js:429
+:26])
+    at Module.init (turbopack:///[turbopack-node]/transforms/postcss.ts:43:33) [C:\Users
+\allsw\OneDrive\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__6d5
+1cb5d._.js:155:35])
+    at run (turbopack:///[turbopack-node]/ipc/evaluate.ts:77:20) [C:\Users\allsw\OneDriv
+e\Documents\GitHub\AI_CHATSIM\.next\build\chunks\[root-of-the-server]__44695d76._.js:429
+:26])
+
