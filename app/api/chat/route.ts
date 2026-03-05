@@ -8,13 +8,18 @@ export async function POST(req: Request) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        console.error('Missing GEMINI_API_KEY');
+        return NextResponse.json({ error: 'AI service configuration error' }, { status: 500 });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+
     try {
         const { message, characterId, conversationId } = await req.json();
 
-        // 1. Verify Session (Using standard client check or JWT)
-        // For simplicity in this direct migration, we expect the user ID to be passed or extracted
-        // Recommendation: Pass the JWT in headers and verify here
+        // 1. Verify Session
         const authHeader = req.headers.get('Authorization');
         if (!authHeader) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -24,6 +29,7 @@ export async function POST(req: Request) {
         const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
         if (authError || !user) {
+            console.error('Auth Error:', authError);
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -35,31 +41,40 @@ export async function POST(req: Request) {
             .single();
 
         if (charError || !character) {
+            console.error('Character Fetch Error:', charError);
             return NextResponse.json({ error: 'Character not found' }, { status: 404 });
         }
 
         // 3. Construct System Prompt
+        const personality = character.personality_prompt || "You are a helpful assistant.";
         const systemPrompt = `
-      Character Name: ${character.name}
-      Character Personality: ${character.personality_prompt}
-      
-      Safety Instructions: This is a safe chat environment for all ages. Maintain appropriate boundaries, do not share dangerous content, and always stay in character.
-    `;
+Character Name: ${character.name}
+Character Personality: ${personality}
+
+Safety Instructions: This is a safe chat environment for all ages. Maintain appropriate boundaries, do not share dangerous content, and always stay in character.
+`;
 
         // 4. Call Gemini
         const model = genAI.getGenerativeModel({
             model: "gemini-1.5-flash",
         });
 
-        // Construct the full prompt for non-streaming
-        const prompt = `${systemPrompt}\n\nUser: ${message}`;
+        // Construct the full prompt
+        const fullPrompt = `${systemPrompt.trim()}\n\nUser: ${message}`;
 
-        // Note: Streaming is handled differently in Serverless. For now, solid response.
-        const result = await model.generateContent(message);
-        const reply = result.response.text();
+        console.log(`Sending prompt to Gemini for character: ${character.name}`);
+
+        const result = await model.generateContent(fullPrompt);
+        const responseText = result.response.text();
+
+        if (!responseText) {
+            throw new Error('Empty response from AI');
+        }
+
+        const reply = responseText;
 
         // 5. Store Messages
-        await supabase.from('messages').insert([
+        const { error: insertError } = await supabase.from('messages').insert([
             {
                 character_id: characterId,
                 user_id: user.id,
@@ -78,11 +93,19 @@ export async function POST(req: Request) {
             }
         ]);
 
+        if (insertError) {
+            console.error('Database Insert Error:', insertError);
+            // We still return the reply to the user even if saving to history fails
+        }
+
         // 6. Return Response
         return NextResponse.json({ reply });
 
     } catch (error: any) {
-        console.error('API Error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error('Detailed API Error:', error);
+        return NextResponse.json({
+            error: 'Failed to generate AI response',
+            details: error.message
+        }, { status: 500 });
     }
 }
