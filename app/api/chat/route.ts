@@ -65,13 +65,24 @@ Safety Instructions: This is a safe chat environment for all ages. Maintain appr
         console.log(`Sending prompt to Gemini for character: ${character.name}`);
 
         const result = await model.generateContent(fullPrompt);
-        const responseText = result.response.text();
 
-        if (!responseText) {
-            throw new Error('Empty response from AI');
+        // Handle potential safety block or empty response
+        let reply = '';
+        try {
+            reply = result.response.text();
+        } catch (e: any) {
+            console.error('Gemini Safety Block or Error:', e);
+            const candidates = result.response.candidates;
+            if (candidates && candidates[0]?.finishReason === 'SAFETY') {
+                reply = "I'm sorry, I cannot fulfill this request due to safety policies.";
+            } else {
+                throw new Error(e.message || 'Failed to get text response from AI');
+            }
         }
 
-        const reply = responseText;
+        if (!reply) {
+            throw new Error('Empty response from AI');
+        }
 
         // 5. Store Messages
         const { error: insertError } = await supabase.from('messages').insert([
