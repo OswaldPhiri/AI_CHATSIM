@@ -18,6 +18,7 @@ interface CharacterSelectorProps {
   onToggleFavoritesOnly: () => void;
   sortOrder: 'name' | 'category';
   onSortOrderChange: (order: 'name' | 'category') => void;
+  onImportCharacters: () => void;
 }
 
 const CharacterSelector: React.FC<CharacterSelectorProps> = ({
@@ -35,6 +36,7 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
   onToggleFavoritesOnly,
   sortOrder,
   onSortOrderChange,
+  onImportCharacters,
 }) => {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
@@ -108,7 +110,13 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
-                    <span className="text-2xl sm:text-3xl">{character.avatar}</span>
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-[var(--bg-secondary)] rounded-full overflow-hidden text-2xl sm:text-3xl">
+                      {character.avatar.startsWith('http') ? (
+                        <img src={character.avatar} alt={character.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{character.avatar}</span>
+                      )}
+                    </div>
                     <div>
                       <h3 className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors duration-200">
                         {character.name}
@@ -170,12 +178,18 @@ const CharacterSelector: React.FC<CharacterSelectorProps> = ({
         )}
       </div>
 
-      <div className="mt-4 animate-slide-up">
+      <div className="mt-4 flex flex-col sm:flex-row gap-3 animate-slide-up">
         <button
           onClick={onCreateCharacter}
-          className="w-full bg-[var(--button-primary)] hover:bg-[var(--button-hover)] text-[var(--button-text)] font-semibold py-2 px-4 rounded-lg transition-colors duration-200 hover-lift"
+          className="flex-1 bg-[var(--button-primary)] hover:bg-[var(--button-hover)] text-[var(--button-text)] font-semibold py-2 px-4 rounded-lg transition-colors duration-200 hover-lift"
         >
           Create New Character
+        </button>
+        <button
+          onClick={onImportCharacters}
+          className="flex-1 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] font-semibold py-2 px-4 rounded-lg transition-colors duration-200 hover-lift border border-[var(--border-color)]"
+        >
+          Import from API
         </button>
       </div>
     </div>

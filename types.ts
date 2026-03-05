@@ -32,5 +32,6 @@ export enum AppView {
   Signup = 'signup',
   CharacterSelection = 'characterSelection',
   CharacterCreation = 'characterCreation',
+  CharacterImport = 'characterImport',
   Chat = 'chat'
 }

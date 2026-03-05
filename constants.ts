@@ -405,5 +405,11 @@ export const AVAILABLE_CATEGORIES = [
   'Mythology',
   'Adventure',
   'Magic',
-  'Outlaw'
+  'Outlaw',
+  'Sci-Fi',
+  'Rick and Morty',
+  'Harry Potter',
+  'Disney',
+  'Anime',
+  'Star Wars'
 ] as const;

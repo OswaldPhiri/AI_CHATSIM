@@ -9,6 +9,7 @@ import ChatWindow from './ChatWindow';
 import LandingPage from './LandingPage';
 import AuthForms from './AuthForms';
 import ThemeToggle from './ThemeToggle';
+import CharacterImporter from './CharacterImporter';
 import { supabase } from '../services/supabaseClient';
 
 const THEME_STORAGE_KEY = 'aiCharacterChat_theme';
@@ -157,6 +158,32 @@ const MainApp: React.FC = () => {
     }
   }, [characterToEdit, user, fetchCharacters]);
 
+  const handleImportCharacters = useCallback(async (selectedCharacters: Character[]) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('characters')
+        .insert(selectedCharacters.map(char => ({
+          user_id: user.id,
+          name: char.name,
+          avatar: char.avatar,
+          bio: char.bio,
+          personality_prompt: char.personalityPrompt,
+          categories: char.categories,
+          voice_settings: char.voiceSettings,
+          is_predefined: false
+        })));
+
+      if (error) throw error;
+
+      await fetchCharacters();
+      setCurrentView(AppView.CharacterSelection);
+    } catch (err) {
+      console.error('Error importing characters:', err);
+    }
+  }, [user, fetchCharacters]);
+
   const handleBackToSelection = useCallback(() => {
     setSelectedCharacter(null);
     setCharacterToEdit(null);
@@ -273,6 +300,13 @@ const MainApp: React.FC = () => {
             initialData={characterToEdit || undefined}
           />
         );
+      case AppView.CharacterImport:
+        return (
+          <CharacterImporter
+            onImport={handleImportCharacters}
+            onCancel={handleBackToSelection}
+          />
+        );
       case AppView.Chat:
         if (selectedCharacter) {
           return <ChatWindow character={selectedCharacter} onBack={handleBackToSelection} user={user} />;
@@ -298,6 +332,7 @@ const MainApp: React.FC = () => {
             onToggleFavoritesOnly={() => setShowFavoritesOnly(prev => !prev)}
             sortOrder={sortOrder}
             onSortOrderChange={setSortOrder}
+            onImportCharacters={() => setCurrentView(AppView.CharacterImport)}
           />
         );
     }

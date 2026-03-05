@@ -163,7 +163,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
               className="mr-2 sm:mr-3 text-[var(--text-primary)] hover:text-[var(--text-hover)] transition-colors duration-200 hover-lift"
               ariaLabel="Back to character selection"
             />
-            <span className="text-3xl">{character.avatar}</span>
+            <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-[var(--bg-tertiary)] rounded-full overflow-hidden text-3xl">
+              {character.avatar.startsWith('http') ? (
+                <img src={character.avatar} alt={character.name} className="w-full h-full object-cover" />
+              ) : (
+                <span>{character.avatar}</span>
+              )}
+            </div>
             <div>
               <h2 className="text-xl font-semibold text-[var(--text-primary)]">{character.name}</h2>
               <p className="text-sm text-[var(--text-tertiary)]">{character.bio}</p>
