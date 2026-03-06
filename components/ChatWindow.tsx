@@ -95,7 +95,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response from AI');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.details || errorData.error || 'Failed to get response from AI');
       }
 
       const { reply } = await response.json();
@@ -110,11 +111,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ character, onBack, user }) => {
       if (isTTSEnabled && reply) {
         speak(reply, character.voiceSettings);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in chat flow:', error);
       setMessages((prev: ChatMessage[]) =>
         prev.map((msg: ChatMessage) =>
-          msg.id === aiMessageId ? { ...msg, text: 'Sorry, I encountered an error. Please try again.', isLoading: false, sender: 'ai' } : msg
+          msg.id === aiMessageId ? { ...msg, text: `Error: ${error.message || 'Sorry, I encountered an error. Please try again.'}`, isLoading: false, sender: 'ai' } : msg
         )
       );
     } finally {
