@@ -1,4 +1,50 @@
 import { Character } from '../types';
+import { CURATED_LIBRARY } from './curatedCharacters';
+
+const getEmojiForCategory = (category: string): string => {
+    switch (category) {
+        case 'Hero': return '🦸';
+        case 'Fantasy': return '🧙';
+        case 'Movie & TV': return '🎬';
+        case 'Anime': return '🍱';
+        case 'Games': return '🎮';
+        case 'Historical': return '📜';
+        case 'Philosophy': return '🧠';
+        case 'Science': return '🧪';
+        case 'Mythology': return '🏺';
+        case 'Literary': return '📚';
+        case 'Sci-Fi': return '🤖';
+        case 'Leadership': return '👑';
+        case 'Pop Culture': return '🌟';
+        case 'Business': return '💼';
+        default: return '👤';
+    }
+};
+
+export const fetchCuratedCharacters = async (searchQuery: string = ''): Promise<Character[]> => {
+    // Filter the static list
+    const filtered = CURATED_LIBRARY.filter(char =>
+        char.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        char.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    return filtered.map(char => ({
+        id: `curated-${char.name.toLowerCase().replace(/\s+/g, '-')}`,
+        name: char.name,
+        avatar: getEmojiForCategory(char.category),
+        bio: `${char.name} is a renowned figure in ${char.category}.`,
+        personalityPrompt: `You are ${char.name}. Act and speak accurately as this character based on their history, traits, and ${char.category} background. Keep responses concise and human-like.`,
+        isPredefined: false,
+        categories: [char.category],
+        isFavorite: false,
+        voiceSettings: {
+            voiceId: getVoiceIdForCharacter(char.name),
+            pitch: 1.0,
+            rate: 1.0,
+            lang: 'en-US'
+        }
+    }));
+};
 
 const getVoiceIdForCharacter = (name: string): string | undefined => {
     const n = name.toLowerCase();

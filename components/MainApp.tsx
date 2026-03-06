@@ -11,6 +11,7 @@ import AuthForms from './AuthForms';
 import ThemeToggle from './ThemeToggle';
 import CharacterImporter from './CharacterImporter';
 import { supabase } from '../services/supabaseClient';
+import { fetchRickAndMortyCharacters, fetchHarryPotterCharacters, fetchDisneyCharacters, fetchAnimeCharacters, fetchStarWarsCharacters, fetchCuratedCharacters } from '../services/apiService';
 
 const THEME_STORAGE_KEY = 'aiCharacterChat_theme';
 
@@ -30,11 +31,14 @@ const MainApp: React.FC = () => {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
-      setUser(session?.user ?? null);
-      if (session) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const newUser = session?.user ?? null;
+      setUser(newUser);
+
+      // Only change view if necessary (don't reset chat on token refresh)
+      if (event === 'SIGNED_IN') {
         setCurrentView(AppView.CharacterSelection);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         setCurrentView(AppView.Landing);
       }
     });
@@ -305,6 +309,33 @@ const MainApp: React.FC = () => {
           <CharacterImporter
             onImport={handleImportCharacters}
             onCancel={handleBackToSelection}
+            sourceOptions={
+              <>
+                <option value="curated">Curated Collection (200+)</option>
+                <option value="rickandmorty">Rick and Morty</option>
+                <option value="harrypotter">Harry Potter</option>
+                <option value="disney">Disney</option>
+                <option value="anime">Anime (Search)</option>
+                <option value="starwars">Star Wars</option>
+              </>
+            }
+            fetchCharactersBySource={async (source, page, searchQuery) => {
+              let fetched: Character[] = [];
+              if (source === 'curated') {
+                fetched = await fetchCuratedCharacters(searchQuery);
+              } else if (source === 'rickandmorty') {
+                fetched = await fetchRickAndMortyCharacters(page);
+              } else if (source === 'harrypotter') {
+                fetched = await fetchHarryPotterCharacters();
+              } else if (source === 'disney') {
+                fetched = await fetchDisneyCharacters(page);
+              } else if (source === 'anime') {
+                fetched = await fetchAnimeCharacters(searchQuery);
+              } else if (source === 'starwars') {
+                fetched = await fetchStarWarsCharacters(page);
+              }
+              return fetched;
+            }}
           />
         );
       case AppView.Chat:
