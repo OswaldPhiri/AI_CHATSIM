@@ -1,5 +1,19 @@
 import { Character } from '../types';
 
+const getVoiceIdForCharacter = (name: string): string | undefined => {
+    const n = name.toLowerCase();
+
+    // Hardcoded community/premade IDs for common characters
+    if (n.includes('rick sanchez')) return '2EiwWnXFnvU5JabPnv8n'; // Clyde (Gravelly/Rick-like)
+    if (n.includes('morty smith')) return 'AZnzlk1XvdvUeBnXmlld'; // Young/Nervous
+    if (n.includes('darth vader')) return 'pNInz6obpguemS3ad7mE'; // Adam (Deep/Vader-like)
+    if (n.includes('yoda')) return 'N2lVS1wzih964MvYFrbd'; // Community Yoda
+    if (n.includes('harry potter')) return 'ErXw9S1naIW6xiD8i41B'; // Antoni (British/Young)
+    if (n.includes('hermione')) return 'EXAVITQu4vr4ARTeXPZC'; // Bella (British/Smart)
+
+    return undefined;
+};
+
 export const fetchRickAndMortyCharacters = async (page: number = 1): Promise<Character[]> => {
     try {
         const response = await fetch(`https://rickandmortyapi.com/api/character?page=${page}`);
@@ -16,6 +30,7 @@ export const fetchRickAndMortyCharacters = async (page: number = 1): Promise<Cha
             categories: ['Cartoon', 'Sci-Fi', 'Rick and Morty'],
             isFavorite: false,
             voiceSettings: {
+                voiceId: getVoiceIdForCharacter(char.name),
                 pitch: 1.0,
                 rate: 1.0,
                 lang: 'en-US'
@@ -47,6 +62,7 @@ export const fetchHarryPotterCharacters = async (): Promise<Character[]> => {
                 categories: ['Magic', 'Harry Potter', char.house || 'Hogwarts'],
                 isFavorite: false,
                 voiceSettings: {
+                    voiceId: getVoiceIdForCharacter(char.name),
                     pitch: 1.0,
                     rate: 1.0,
                     lang: 'en-GB' // British English for Harry Potter
@@ -74,6 +90,7 @@ export const fetchDisneyCharacters = async (page: number = 1): Promise<Character
             categories: ['Disney', 'Cartoon', 'Hero'],
             isFavorite: false,
             voiceSettings: {
+                voiceId: getVoiceIdForCharacter(char.name),
                 pitch: 1.1,
                 rate: 1.0,
                 lang: 'en-US'
@@ -105,6 +122,7 @@ export const fetchAnimeCharacters = async (query: string = ''): Promise<Characte
             categories: ['Anime', 'Cartoon', 'Hero'],
             isFavorite: false,
             voiceSettings: {
+                voiceId: getVoiceIdForCharacter(char.name),
                 pitch: 1.0,
                 rate: 1.1,
                 lang: 'ja-JP' // Default to Japanese if user prefers, but will speak English with AI
@@ -135,6 +153,7 @@ export const fetchStarWarsCharacters = async (page: number = 1): Promise<Charact
                 categories: ['Star Wars', 'Sci-Fi', 'Hero'],
                 isFavorite: false,
                 voiceSettings: {
+                    voiceId: getVoiceIdForCharacter(char.name),
                     pitch: 1.0,
                     rate: 1.0,
                     lang: 'en-US'

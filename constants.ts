@@ -107,6 +107,7 @@ export const PREDEFINED_CHARACTERS: Character[] = [
     categories: ['Hero', 'Cartoon', 'Leadership'],
     isFavorite: false,
     voiceSettings: {
+      voiceId: 'pNInz6obpguemS3ad7mE', // Adam (Deep/Batman-like)
       voiceName: 'Google UK English Male',
       pitch: 0.72,  // Even lower for Batman voice
       rate: 0.82,   // Slower for intensity
@@ -155,6 +156,7 @@ export const PREDEFINED_CHARACTERS: Character[] = [
     categories: ['Hero', 'Educational', 'Leadership'],
     isFavorite: false,
     voiceSettings: {
+      voiceId: 'ErXw9S1naIW6xiD8i41B', // Antoni (British/Harry-like)
       voiceName: 'Google UK English Male',
       pitch: 1.2,   // Higher for youth
       rate: 1.2,    // Faster for energy
