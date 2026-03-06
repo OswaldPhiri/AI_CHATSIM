@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Character } from '../types';
-import { fetchRickAndMortyCharacters, fetchHarryPotterCharacters, fetchDisneyCharacters, fetchAnimeCharacters, fetchStarWarsCharacters } from '../services/apiService';
+import { fetchRickAndMortyCharacters, fetchHarryPotterCharacters, fetchDisneyCharacters, fetchAnimeCharacters, fetchStarWarsCharacters, fetchCuratedCharacters } from '../services/apiService';
 import IconButton from './IconButton';
 import LoadingSpinner from './LoadingSpinner';
 
@@ -10,7 +10,7 @@ interface CharacterImporterProps {
 }
 
 const CharacterImporter: React.FC<CharacterImporterProps> = ({ onImport, onCancel }) => {
-    const [source, setSource] = useState<'rickandmorty' | 'harrypotter' | 'disney' | 'anime' | 'starwars'>('rickandmorty');
+    const [source, setSource] = useState<'rickandmorty' | 'harrypotter' | 'disney' | 'anime' | 'starwars' | 'curated'>('curated');
     const [characters, setCharacters] = useState<Character[]>([]);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(false);
@@ -21,7 +21,9 @@ const CharacterImporter: React.FC<CharacterImporterProps> = ({ onImport, onCance
         setLoading(true);
         let fetched: Character[] = [];
         try {
-            if (source === 'rickandmorty') {
+            if (source === 'curated') {
+                fetched = await fetchCuratedCharacters(searchQuery);
+            } else if (source === 'rickandmorty') {
                 fetched = await fetchRickAndMortyCharacters(page);
             } else if (source === 'harrypotter') {
                 fetched = await fetchHarryPotterCharacters();
@@ -41,7 +43,7 @@ const CharacterImporter: React.FC<CharacterImporterProps> = ({ onImport, onCance
     };
 
     useEffect(() => {
-        if (source !== 'anime' || !searchQuery) {
+        if ((source !== 'anime' && source !== 'curated') || !searchQuery) {
             loadCharacters();
         }
     }, [source, page]);
@@ -87,6 +89,7 @@ const CharacterImporter: React.FC<CharacterImporterProps> = ({ onImport, onCance
                         }}
                         className="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg py-1 px-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus)]"
                     >
+                        <option value="curated">Curated Collection (200+)</option>
                         <option value="rickandmorty">Rick and Morty</option>
                         <option value="harrypotter">Harry Potter</option>
                         <option value="disney">Disney</option>
@@ -96,11 +99,11 @@ const CharacterImporter: React.FC<CharacterImporterProps> = ({ onImport, onCance
                 </div>
             </header>
 
-            {source === 'anime' && (
+            {(source === 'anime' || source === 'curated') && (
                 <div className="mb-4 flex gap-2">
                     <input
                         type="text"
-                        placeholder="Search anime characters (e.g. Naruto, Goku)..."
+                        placeholder={source === 'anime' ? "Search anime characters..." : "Search curated collection (e.g. Iron Man, Einstein)..."}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="flex-grow bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg py-1.5 px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus)]"
